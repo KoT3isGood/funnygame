@@ -27,9 +27,12 @@ pub fn build(b: *std.Build) void {
 
             // client
             "client/client.c",
+            "client/render.c",
         },
     });
     exe.addIncludePath(b.path("./"));
+    exe.addIncludePath(b.path("./includes/vulkan/include/"));
+    exe.linkSystemLibrary("vulkan");
 
     const tools = b.addExecutable(.{
         .name = "tools",
