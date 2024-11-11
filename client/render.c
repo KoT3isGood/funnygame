@@ -2,6 +2,8 @@
 #include "vulkan/vulkan.h"
 #include "stdio.h"
 #include <vulkan/vulkan_core.h>
+#include "X11/Xlib.h"
+#include "vulkan/vulkan_xlib.h"
 #include "../common/common.h"
 #include "stdlib.h"
 
@@ -24,7 +26,12 @@ void draw_init() {
     appInfo.apiVersion = VK_API_VERSION_1_3;
 
     VkInstanceCreateInfo createInfo = {};
-    createInfo.enabledExtensionCount = 0;
+    const char* extensions[] = {
+      VK_KHR_SURFACE_EXTENSION_NAME,
+      VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+    };
+    createInfo.enabledExtensionCount = 2;
+    createInfo.ppEnabledExtensionNames = extensions;
     createInfo.enabledLayerCount = 0;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -54,10 +61,15 @@ void draw_init() {
     queueCreateInfo.queueCount = 1;
     queueCreateInfo.pQueuePriorities = &priority; 
 
+    const char* extensions[] = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    };
+
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.enabledLayerCount = 0;
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = 1;
+    createInfo.ppEnabledExtensionNames = extensions;
     createInfo.queueCreateInfoCount = 1;
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     vkCreateDevice(physicalDevice,&createInfo, 0, &device);
@@ -71,5 +83,6 @@ void draw_init() {
 };
 void draw_flush();
 void draw_deinit() {
+  vkDestroyDevice(device,0);
   vkDestroyInstance(instance,0);
 };

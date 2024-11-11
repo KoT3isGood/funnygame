@@ -1,8 +1,9 @@
 #pragma once
 #include "window.h"
 #include "render.h"
+#include "stdbool.h"
 
 void client_init();
 void client_frame();
-void client_shouldrun();
+bool client_shouldrun();
 void client_deinit();
