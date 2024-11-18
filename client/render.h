@@ -1,13 +1,19 @@
 #pragma once
+#include "vulkan/vulkan.h"
 
 typedef void* buffer;
 typedef void* image;
 
-typedef struct material {
+typedef struct {
   int albedo;
   int normal;
-};
+} material;
 typedef struct {
+  int numindicies;
+  int numverices;
+  int numnormals;
+  int numuvs;
+  int nummaterials;
   buffer vertex;
   buffer index;
   buffer normals;
@@ -15,7 +21,6 @@ typedef struct {
   buffer uvs;
   buffer indexuvs;
   material* materials;
-  int nummaterials;
 } modelinfo;
 typedef void* model;
 typedef void* skeleton;
@@ -28,5 +33,10 @@ void draw_model(model m);
 void draw_skinned(model m, skeleton s, animdata a);
 
 void draw_init();
+int draw_sync();
 void draw_flush();
 void draw_deinit();
+
+
+
+VkImageView vk_genimageview(const VkImage image, VkFormat format);

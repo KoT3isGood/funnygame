@@ -1,4 +1,5 @@
 #include "client.h"
+#include "render.h"
 #include "window.h"
 #include "stdio.h"
 
@@ -11,15 +12,11 @@ void client_init() {
   sys_setwindowtitle(mainwindow,"funnygame");
   sys_setwindowsize(mainwindow,1,1,1280,720);
 
-  window test2 = sys_createwindow();
-  sys_setwindowtitle(test2,"help");
-  window test3 = sys_createwindow();
-  sys_setwindowtitle(test3,"help123");
-
   printf("client inited\n");
 };
 void client_frame() {
   sys_prerender();
+  sys_render();
 };
 bool client_shouldrun() {
   return sys_windowsexists(mainwindow);

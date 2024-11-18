@@ -10,14 +10,20 @@
 
 Display* dp;
 int screen;
+int windowcount;
+VkSwapchainKHR* swapchains = 0;
+uint32_t* imageindexes;
 
 
 typedef struct {
   struct xwindow* next;
   Window wind;
   char* name;
+  int windowimage;
   VkSwapchainKHR swapchain;
   VkSurfaceKHR surface;
+  VkImage images[2];
+  VkImageView imageviews[2];
 } xwindow;
 xwindow* windows=0;
 
@@ -55,8 +61,6 @@ void sys_prerender() {
     XNextEvent(dp,&ev);
     switch(ev.type) {
       case DestroyNotify:
-        printf("Event received for window ID: %llu\n", ev.xdestroywindow.window);
-        printf("destroying window\n");
 
         xwindow* window = findwindow2(ev.xdestroywindow.window);
         if (!window) {
@@ -76,30 +80,49 @@ void sys_prerender() {
         };
 
 deletesuccess:
+        windowcount--;
         vkDestroySwapchainKHR(device,window->swapchain,0);
         vkDestroySurfaceKHR(instance,window->surface,0);
-
-
-
         free(window);
+
         break;
       case KeyPress:
         printf("pressing something\n");
         break;
     }
   }
+  if (!swapchains) {
+    free(swapchains);
+    free(imageindexes);
+  }
+  swapchains = (VkSwapchainKHR*)malloc(sizeof(VkSwapchainKHR)*windowcount);
+  imageindexes = (uint32_t*)malloc(sizeof(uint32_t)*windowcount);
+  int i = 0;
+  for(xwindow* window=windows;window;window=(xwindow*)window->next) {
+    swapchains[i]=window->swapchain;
+    i+=1;
+  }
+  if (!windowcount) return;
+  if (!draw_sync()) {
+    fuck("draw_sync");
+  };
+  i=0;
+  for(xwindow* window=windows;window;window=(xwindow*)window->next) {
+    window->windowimage=imageindexes[i];
+    i++;
+  }
 };
-void sys_render() {
-  
+void sys_render() { 
+  draw_flush();
 };
 void sys_deinitwindows() {
   XCloseDisplay(dp);
 };
 
 window sys_createwindow() {
-  xwindow* w = (xwindow*)malloc(sizeof(xwindow));
+  xwindow* w = (xwindow*)calloc(1,sizeof(xwindow));
+
   w->wind = XCreateSimpleWindow(dp,RootWindow(dp,screen),0,0,1280,720,1,0,0);
-  printf("%llu\n",w->wind);
   XSelectInput(dp,w->wind, KeyPressMask | StructureNotifyMask);
   w->name = 0;
   w->next=windows;
@@ -135,7 +158,15 @@ window sys_createwindow() {
 
     createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; 
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    vkCreateSwapchainKHR(device, &createInfo, 0, &w->swapchain);  }
+    vkCreateSwapchainKHR(device, &createInfo, 0, &w->swapchain);  
+
+    uint32_t imageCount = 2;
+	  vkGetSwapchainImagesKHR(device, w->swapchain, &imageCount, w->images);
+    for (uint32_t i = 0; i < 2; i++) {
+      w->imageviews[i]=vk_genimageview(w->images[i],createInfo.imageFormat );
+    }
+  }
+  windowcount++;
 
   return w;
 };
@@ -151,6 +182,19 @@ void sys_setwindowtitle(window wind, const char* title) {
 };
 void sys_destroywindow(window wind) {
   XDestroyWindow(dp,((xwindow*)wind)->wind);
+};
+
+VkImage sys_getwindowimage(window wind) {
+  printf("a: %i\n",((xwindow*)wind)->windowimage);
+  printf("b: %i\n",((xwindow*)wind));
+  return (
+      (xwindow*)wind
+      )->images[
+    ((xwindow*)wind)->windowimage
+      ];
+};
+VkImageView sys_getwindowimageview(window wind) {
+  return ((xwindow*)wind)->imageviews[((xwindow*)wind)->windowimage];
 };
 
 bool sys_windowsexists(window wind) {

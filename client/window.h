@@ -1,5 +1,7 @@
 #pragma once
 #include "stdbool.h"
+#include "vulkan/vulkan.h"
+#include "render.h"
 typedef void* window;
 
 void sys_initwindows();
@@ -13,3 +15,5 @@ void sys_setwindowtitle(window wind, const char* title);
 void sys_destroywindow(window wind);
 bool sys_windowsexists(window wind);
 
+VkImage sys_getwindowimage(window wind);
+VkImageView sys_getwindowimageview(window wind);

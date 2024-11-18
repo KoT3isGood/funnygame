@@ -24,7 +24,6 @@ void cmd_create(const char* name, cmdfunc_t function) {
   cmdfunction_t* func = (cmdfunction_t*)malloc(sizeof(cmdfunction_t));
   func->name = strclone(name);
   func->function = function;
-  printf("%lld\n",cmdfunctions);
   func->next = cmdfunctions;
   cmdfunctions = func;
 };
