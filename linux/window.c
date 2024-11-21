@@ -13,6 +13,7 @@ int screen;
 int windowcount;
 VkSwapchainKHR* swapchains = 0;
 uint32_t* imageindexes;
+bool canrender = false;
 
 
 typedef struct {
@@ -103,8 +104,15 @@ deletesuccess:
     i+=1;
   }
   if (!windowcount) return;
-  if (!draw_sync()) {
-    fuck("draw_sync");
+  canrender = true;
+  int status = draw_sync();
+  if (status) {
+    if (status=1000001003) {
+      return;
+    }
+    printf("%i\n",status);
+    canrender = false;
+    return;
   };
   i=0;
   for(xwindow* window=windows;window;window=(xwindow*)window->next) {
@@ -113,7 +121,9 @@ deletesuccess:
   }
 };
 void sys_render() { 
-  draw_flush();
+  if (canrender) {
+    draw_flush();
+  }
 };
 void sys_deinitwindows() {
   XCloseDisplay(dp);

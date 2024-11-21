@@ -6,13 +6,8 @@
 #include "vulkan/vulkan_xlib.h"
 #include "../common/common.h"
 #include "stdlib.h"
+#include "memory.h"
 #include "window.h"
-
-model draw_genmodel(modelinfo info);
-void draw_copymodel(model m);
-void draw_destroymodel(model m);
-void draw_model(model m);
-void draw_skinned(model m, skeleton s, animdata a);
 
 VkInstance instance;
 
@@ -30,9 +25,10 @@ VkFence fence[2];
 VkSemaphore graphicsSemaphore[16];
 VkSemaphore presentSemaphore[16];
 
+
 int imageIndex;
 
-
+void draw_initmodels();
 void draw_init() { 
   {
     printf("drawing\n");
@@ -51,7 +47,8 @@ void draw_init() {
     createInfo.enabledLayerCount = 0;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    vkCreateInstance(&createInfo,0,&instance);
+    VkResult r = vkCreateInstance(&createInfo,0,&instance);
+    printf("%i\n",r);
   }
   {
     // device
@@ -133,6 +130,8 @@ void draw_init() {
     }
   }
   printf("created drawer\n");
+
+  draw_initmodels();
 };
 
 extern int windowcount;
@@ -150,13 +149,15 @@ int draw_sync() {
   for (int i = 0; i<windowcount;i++) {
     VkResult r = vkAcquireNextImageKHR(device, swapchains[i], UINT64_MAX,presentSemaphore[i], 0, &imageindexes[i]);
     if (r!=VK_SUCCESS) {
-      return 1;
+      return r;
     };
   }
   return 0;
 };
 
 extern window mainwindow;
+void draw_rendermodels();
+
 void draw_flush() {
   if (!windowcount) {
     return;
@@ -166,6 +167,7 @@ void draw_flush() {
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   vkBeginCommandBuffer(cmd[imageIndex],&beginInfo);
+  draw_rendermodels();
   VkImageSubresourceRange isr = {};
   isr.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   isr.layerCount=1;
@@ -205,7 +207,34 @@ void draw_deinit() {
   vkDestroyInstance(instance,0);
 };
 
+uint32_t findmemorytype(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage) {
+  VkMemoryRequirements memRequirements;
+  vk_buffer buffer;
+
+  VkBufferCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  createInfo.size = size;
+  createInfo.usage = usage;
+  createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  vkCreateBuffer(device,&createInfo,0,&buffer.buffer);
+
+  vkGetBufferMemoryRequirements(device, buffer.buffer, &memRequirements);
+
+	VkMemoryAllocateFlagsInfo allocFlagsInfo={};
+	allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+	allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+	VkMemoryAllocateInfo allocInfo={};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findmemorytype(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	allocInfo.pNext = &allocFlagsInfo;
+	vkAllocateMemory(device, &allocInfo, 0, &buffer.memory);
+	vkBindBufferMemory(device, buffer.buffer, buffer.memory, 0);
+
+  return buffer;
+};
 
 
 VkImageView vk_genimageview(const VkImage image, VkFormat format) {	
@@ -230,3 +259,17 @@ VkImageView vk_genimageview(const VkImage image, VkFormat format) {
 	vkCreateImageView(device, &imageViewCreateInfo, 0, &imageView);
 	return imageView;
 }
+
+uint32_t findmemorytype(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+	return 0;
+}
+

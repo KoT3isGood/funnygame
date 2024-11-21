@@ -28,6 +28,7 @@ pub fn build(b: *std.Build) void {
             // client
             "client/client.c",
             "client/render.c",
+            "client/render/model.c",
         },
     });
     exe.addIncludePath(b.path("./"));

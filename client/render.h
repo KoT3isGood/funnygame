@@ -1,27 +1,9 @@
 #pragma once
 #include "vulkan/vulkan.h"
+#include "../common/common.h"
+#include <vulkan/vulkan_core.h>
 
-typedef void* buffer;
-typedef void* image;
 
-typedef struct {
-  int albedo;
-  int normal;
-} material;
-typedef struct {
-  int numindicies;
-  int numverices;
-  int numnormals;
-  int numuvs;
-  int nummaterials;
-  buffer vertex;
-  buffer index;
-  buffer normals;
-  buffer indexnormals;
-  buffer uvs;
-  buffer indexuvs;
-  material* materials;
-} modelinfo;
 typedef void* model;
 typedef void* skeleton;
 typedef void* animdata;
@@ -37,6 +19,26 @@ int draw_sync();
 void draw_flush();
 void draw_deinit();
 
+typedef struct {
+  uint32_t size;
+  VkBuffer buffer;
+  VkDeviceMemory memory;
+} vk_buffer;
+
+typedef struct {
+  VkPipeline pipeline;
+  VkPipelineLayout layout;
+  VkDescriptorSetLayout descriptorlayout;
+  VkDescriptorSet descriptor;
+} vk_tripipeline;
+
+typedef struct {
+
+} vk_tripipeline_info;
+
+vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage);
+vk_tripipeline vk_gentripipeline(vk_tripipeline_info info);
 
 
 VkImageView vk_genimageview(const VkImage image, VkFormat format);
+
