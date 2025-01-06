@@ -4,7 +4,7 @@ extern char* cmd_argv[16];
 
 typedef void(*cmdfunc_t)(void);
 
-typedef struct {
+typedef struct cmdfunction_t {
   struct cmdfunction_t* next;
   const char* name;
   cmdfunc_t function; 

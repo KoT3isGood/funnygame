@@ -114,6 +114,7 @@ void draw_init() {
     vkAllocateCommandBuffers(device, &cmdAllocateInfo, &stagingCommandBuffer);
   }
   {
+    // sync
     VkFenceCreateInfo fenceCreateInfo={};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -124,6 +125,8 @@ void draw_init() {
     for (uint32_t i = 0; i < 2;i++) {
       vkCreateFence(device, &fenceCreateInfo, 0, &fence[i]);
     }
+
+    // hardcode 16 windows lol
     for (uint32_t i = 0; i < 16;i++) {
       vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &graphicsSemaphore[i]);
       vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &presentSemaphore[i]);
@@ -137,11 +140,14 @@ void draw_init() {
 extern int windowcount;
 extern VkSwapchainKHR* swapchains;
 extern uint32_t* imageindexes;
+extern bool hasremade;
 
 
 int draw_sync() {
+  if (!hasremade) {
   vkWaitForFences(device,1,&fence[imageIndex],VK_TRUE,UINT64_MAX);
   vkResetFences(device,1,&fence[imageIndex]);
+  }
 
   if (!windowcount) {
     return 1;
@@ -162,7 +168,7 @@ void draw_flush() {
   if (!windowcount) {
     return;
   }
-
+  // command buffer
   vkResetCommandBuffer(cmd[imageIndex],0);
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -177,6 +183,8 @@ void draw_flush() {
   };
   vkCmdClearColorImage(cmd[imageIndex],sys_getwindowimage(mainwindow), VK_IMAGE_LAYOUT_GENERAL,&ccv,1,&isr);
   vkEndCommandBuffer(cmd[imageIndex]);
+
+  // flush
   VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -273,3 +281,5 @@ uint32_t findmemorytype(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	return 0;
 }
 
+
+vk_tripipeline vk_gentripipeline(vk_tripipeline_info info);

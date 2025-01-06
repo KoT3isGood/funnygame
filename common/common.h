@@ -1,9 +1,13 @@
 #pragma once
 #include "stdint.h"
+
+
 typedef struct {
   uint32_t albedo;
   uint32_t normal;
 } material;
+
+
 typedef struct {
   uint32_t numindicies;
   uint32_t numverices;
@@ -18,5 +22,7 @@ typedef struct {
   uint32_t* indexuvs;
   material* materials;
 } modelinfo;
+
+
 void fuck(const char* why);
 const char* strclone(const char* format, ...);

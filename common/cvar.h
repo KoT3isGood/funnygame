@@ -6,7 +6,7 @@ typedef enum {
   CVAR_PROTECTED = 0x01,   // is protected by the server
 } cvar_flag;
 
-typedef struct {
+typedef struct cvar_t {
   struct cvar_t* next;
   const char* name;
   const char* value;

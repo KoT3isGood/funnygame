@@ -16,7 +16,7 @@ uint32_t* imageindexes;
 bool canrender = false;
 
 
-typedef struct {
+typedef struct xwindow {
   struct xwindow* next;
   Window wind;
   char* name;
@@ -56,6 +56,8 @@ void sys_initwindows() {
 extern VkInstance instance;
 extern VkPhysicalDevice physicalDevice;
 extern VkDevice device;
+
+bool hasremade;
 void sys_prerender() {
   XEvent ev;
   if (XPending(dp)) {
@@ -104,14 +106,60 @@ deletesuccess:
     i+=1;
   }
   if (!windowcount) return;
+  hasremade=false;
+rerender:
+  printf("a\n");
   canrender = true;
   int status = draw_sync();
+  printf("status:%i\n",status);
   if (status) {
-    if (status=1000001003) {
-      return;
-    }
-    printf("%i\n",status);
     canrender = false;
+    if (status==1000001003) {
+      hasremade=true;
+      // resize
+      printf("resizing\n");
+      for(window* wind=windows;wind;wind=((xwindow*)wind)->next) {
+        xwindow* window = wind;
+        vkDestroySwapchainKHR(device,window->swapchain,0);
+        vkDestroySurfaceKHR(instance,window->surface,0);
+        {
+          VkXlibSurfaceCreateInfoKHR createInfo = {};
+          createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+          createInfo.window = window->wind;
+          createInfo.dpy = dp;
+          vkCreateXlibSurfaceKHR(instance,&createInfo,0,&window->surface);
+        }
+
+        {
+          VkSurfaceCapabilitiesKHR capabilies={};
+          vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, window->surface, &capabilies);
+          VkSwapchainCreateInfoKHR createInfo = {};
+          createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+          createInfo.surface = window->surface;
+          createInfo.minImageCount = 2;
+          createInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+          createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+          createInfo.imageExtent = capabilies.minImageExtent;
+          createInfo.imageArrayLayers = 1;
+          createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+          createInfo.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+          createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; 
+          createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+          vkCreateSwapchainKHR(device, &createInfo, 0, &window->swapchain);  
+
+          uint32_t imageCount = 2;
+          vkGetSwapchainImagesKHR(device, window->swapchain, &imageCount, window->images);
+          for (uint32_t i = 0; i < 2; i++) {
+            window->imageviews[i]=vk_genimageview(window->images[i],createInfo.imageFormat );
+          }
+        }
+
+      };
+      printf("resizing done\n");
+      goto rerender;
+    }
+    printf("status: %i\n",status);
     return;
   };
   i=0;
@@ -195,8 +243,6 @@ void sys_destroywindow(window wind) {
 };
 
 VkImage sys_getwindowimage(window wind) {
-  printf("a: %i\n",((xwindow*)wind)->windowimage);
-  printf("b: %i\n",((xwindow*)wind));
   return (
       (xwindow*)wind
       )->images[

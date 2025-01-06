@@ -19,6 +19,7 @@ pub fn build(b: *std.Build) void {
             // files
             "linux/main.c",
             "linux/window.c",
+            "linux/module.c",
 
             // common
             "common/common.c",
