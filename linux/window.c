@@ -64,7 +64,7 @@ void sys_prerender() {
     XNextEvent(dp,&ev);
     switch(ev.type) {
       case DestroyNotify:
-
+        ;
         xwindow* window = findwindow2(ev.xdestroywindow.window);
         if (!window) {
           printf("failed to find window\n");
@@ -119,6 +119,7 @@ rerender:
       // resize
       printf("resizing\n");
       for(window* wind=windows;wind;wind=((xwindow*)wind)->next) {
+        ;
         xwindow* window = wind;
         vkDestroySwapchainKHR(device,window->swapchain,0);
         vkDestroySurfaceKHR(instance,window->surface,0);

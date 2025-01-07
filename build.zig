@@ -13,14 +13,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe.linkLibC();
-    exe.linkSystemLibrary("X11");
     exe.addCSourceFiles(.{
         .files = &.{
-            // files
-            "linux/main.c",
-            "linux/window.c",
-            "linux/module.c",
-
             // common
             "common/common.c",
             "common/cvar.c",
@@ -32,9 +26,33 @@ pub fn build(b: *std.Build) void {
             "client/render/model.c",
         },
     });
+    if (target.result.os.tag == .windows) {
+        exe.linkSystemLibrary("ws2_32");
+        exe.linkSystemLibrary("vulkan-1");
+        exe.addCSourceFiles(.{
+            .files = &.{
+                // files
+                "windows/main.c",
+                "windows/window.c",
+                //"windows/module.c",
+            },
+        });
+    }
+    if (target.result.os.tag == .linux) {
+        exe.linkSystemLibrary("X11");
+        exe.linkSystemLibrary("vulkan");
+        exe.addCSourceFiles(.{
+            .files = &.{
+                // files
+                "linux/main.c",
+                "linux/window.c",
+                "linux/module.c",
+            },
+        });
+    }
     exe.addIncludePath(b.path("./"));
     exe.addIncludePath(b.path("./includes/vulkan/include/"));
-    exe.linkSystemLibrary("vulkan");
+    exe.addLibraryPath(b.path("./includes"));
 
     const tools = b.addExecutable(.{
         .name = "tools",

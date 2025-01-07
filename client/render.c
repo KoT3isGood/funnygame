@@ -2,8 +2,14 @@
 #include "vulkan/vulkan.h"
 #include "stdio.h"
 #include <vulkan/vulkan_core.h>
+#ifdef __linux
 #include "X11/Xlib.h"
 #include "vulkan/vulkan_xlib.h"
+#endif
+#ifdef __WIN32__
+#include "windows.h"
+#include "vulkan/vulkan_win32.h"
+#endif
 #include "../common/common.h"
 #include "stdlib.h"
 #include "memory.h"
@@ -40,7 +46,12 @@ void draw_init() {
     VkInstanceCreateInfo createInfo = {};
     const char* extensions[] = {
       VK_KHR_SURFACE_EXTENSION_NAME,
+#ifdef __linux
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#endif
+#ifdef __WIN32__
+      VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#endif
     };
     createInfo.enabledExtensionCount = 2;
     createInfo.ppEnabledExtensionNames = extensions;
