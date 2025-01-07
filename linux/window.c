@@ -108,16 +108,13 @@ deletesuccess:
   if (!windowcount) return;
   hasremade=false;
 rerender:
-  printf("a\n");
   canrender = true;
   int status = draw_sync();
-  printf("status:%i\n",status);
   if (status) {
     canrender = false;
     if (status==1000001003) {
       hasremade=true;
       // resize
-      printf("resizing\n");
       for(window* wind=windows;wind;wind=((xwindow*)wind)->next) {
         ;
         xwindow* window = wind;
@@ -138,7 +135,14 @@ rerender:
           createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
           createInfo.surface = window->surface;
           createInfo.minImageCount = 2;
-          createInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+          
+          uint32_t numformats = 0;
+          vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,window->surface,&numformats,0);
+          VkSurfaceFormatKHR* formats = malloc(sizeof(VkSurfaceFormatKHR)*numformats);
+          vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,window->surface,&numformats,formats);
+          createInfo.imageFormat = formats[0].format;
+          free(formats);
+
           createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
           createInfo.imageExtent = capabilies.minImageExtent;
           createInfo.imageArrayLayers = 1;
@@ -204,11 +208,14 @@ window sys_createwindow() {
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = w->surface;
     createInfo.minImageCount = 2;
-#ifdef __linux__
-    createInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-#else 
-    createInfo.imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
-#endif
+
+    uint32_t numformats = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,w->surface,&numformats,0);
+    VkSurfaceFormatKHR* formats = malloc(sizeof(VkSurfaceFormatKHR)*numformats);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,w->surface,&numformats,formats);
+    createInfo.imageFormat = formats[0].format;
+    free(formats);
+
     createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     createInfo.imageExtent = capabilies.minImageExtent;
     createInfo.imageArrayLayers = 1;
