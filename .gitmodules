@@ -1,3 +1,6 @@
 [submodule "includes/vulkan"]
 	path = includes/vulkan
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "includes/libbrv"]
+	path = includes/libbrv
+	url = https://github.com/KoT3isGood/libbrv.git
