@@ -52,7 +52,11 @@ extern VkDevice device;
 
 bool hasremade;
 void sys_prerender() {
-  
+  MSG msg;
+  if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);;
+		DispatchMessageW(&msg);	
+	}
 
   if (!swapchains) {
     free(swapchains);
@@ -158,7 +162,7 @@ window sys_createwindow() {
   w->wind = CreateWindowExA(
     0,                              // Optional window styles.
     CLASS_NAME,                     // Window class
-    "Learn to Program Windows",    // Window text
+    "",    // Window text
     WS_OVERLAPPEDWINDOW,            // Window style
 
     // Size and position
@@ -219,6 +223,7 @@ window sys_createwindow() {
     }
   }
   windowcount++;
+  SetWindowLongPtr(w->wind, GWLP_USERDATA,(long long)w);
 
   return w;
 };
@@ -252,5 +257,42 @@ bool sys_windowsexists(window wind) {
 };
 
 LRESULT handlewindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  xwindow* window = (xwindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+  switch (uMsg) {
+	case WM_DESTROY:
+	{
+    if (!window) {
+      printf("failed to find window\n");
+      return 0;
+    };
+    if (window==windows) {
+      windows = window->next;
+      goto deletesuccess;
+    }
+    xwindow* wind;
+    for(wind=windows;wind;wind=(xwindow*)wind->next) {
+      if ((xwindow*)wind->next==window) {
+        wind->next = window->next;
+        break;
+      };
+    };
 
+deletesuccess:
+    windowcount--;
+    vkDestroySwapchainKHR(device,window->swapchain,0);
+    vkDestroySurfaceKHR(instance,window->surface,0);
+    free(window);
+
+		break;
+	}
+	case WM_SIZE:
+    printf("resizing window\n");	
+		break;
+	case WM_ACTIVATEAPP:
+    printf("selecting window as active\n");	
+	default:
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		break;
+	}
+	return 0;
 }
