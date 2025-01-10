@@ -1,7 +1,12 @@
-#include "objtofmf.h"
+#include "model.h"
 #include "stdio.h"
-void objtofmf(const char* file) {
+#include "stdlib.h"
+void objtobmf(const char* file) {
   FILE* f = fopen(file,"r");
+  if (!f) {
+    printf("failed to find file\n");
+    exit(1);
+  }
 	uint32_t size = 0;
   fseek(f, 0, SEEK_END); // seek to end of file
   size = ftell(f); // get current file pointer
@@ -105,7 +110,7 @@ void objtofmf(const char* file) {
   uint32_t outputFileNameLen = strlen(file);
   char* outputFileName = (char*)malloc(outputFileNameLen+1);
   strcpy(outputFileName, file);
-  const char* ending = ".fmf";
+  const char* ending = ".bmf";
   memcpy(outputFileName+outputFileNameLen-4,ending, 5);
 
   fclose(fopen(outputFileName, "w"));

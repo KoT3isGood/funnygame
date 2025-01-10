@@ -9,6 +9,7 @@ typedef struct {
 
 
 typedef struct {
+  char* data;
   uint32_t numindicies;
   uint32_t numverices;
   uint32_t numnormals;
@@ -26,3 +27,5 @@ typedef struct {
 
 void fuck(const char* why);
 const char* strclone(const char* format, ...);
+modelinfo readmodel(const char* file);
+void print_hex(const unsigned char *data, uint64_t length);

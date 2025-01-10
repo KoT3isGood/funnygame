@@ -1,5 +1,4 @@
 const std = @import("std");
-
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
@@ -13,6 +12,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe.linkLibC();
+    exe.linkLibCpp();
     exe.addCSourceFiles(.{
         .files = &.{
             // common
@@ -23,6 +23,7 @@ pub fn build(b: *std.Build) void {
             // client
             "client/client.c",
             "client/render.c",
+            "client/vma.cpp",
             "client/render/model.c",
         },
     });
@@ -54,13 +55,21 @@ pub fn build(b: *std.Build) void {
     exe.addIncludePath(b.path("./includes/vulkan/include/"));
     exe.addLibraryPath(b.path("./includes"));
 
+    const _libbrv = b.dependency("libbrv", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const libbrv = _libbrv.artifact("brv");
+    exe.linkLibrary(libbrv);
+
     const tools = b.addExecutable(.{
         .name = "tools",
         .target = target,
         .optimize = optimize,
     });
     tools.linkLibC();
-    tools.addCSourceFiles(.{ .files = &.{ "tools/main.c", "tools/objtofmf.c" } });
+    tools.addCSourceFiles(.{ .files = &.{ "tools/main.c", "tools/model.c" } });
+    tools.linkLibrary(libbrv);
     b.exe_dir = "bin/";
 
     b.installArtifact(tools);

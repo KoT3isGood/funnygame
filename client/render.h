@@ -12,7 +12,7 @@ typedef void* animdata;
 model draw_genmodel(modelinfo info);
 void draw_copymodel(model m);
 void draw_destroymodel(model m);
-void draw_model(model m);
+void draw_model(model m, float matrix[16]);
 void draw_skinned(model m, skeleton s, animdata a);
 
 void draw_init();
@@ -29,8 +29,8 @@ typedef struct vk_buffer {
 typedef struct vk_tripipeline {
   VkPipeline pipeline;
   VkPipelineLayout layout;
-  VkDescriptorSetLayout descriptorlayout;
   VkDescriptorSet descriptor;
+  VkRenderPass renderpass;
 } vk_tripipeline;
 
 typedef struct vk_renderpass {
@@ -39,16 +39,23 @@ typedef struct vk_renderpass {
   bool store;
 } vk_renderpass;
 
+typedef struct vk_shader {
+  VkShaderStageFlagBits type;
+  VkShaderModule module;
+  VkPipelineShaderStageCreateInfo stageinfo;
+} vk_shader;
+
+typedef struct vk_descriptorset {
+  VkDescriptorSetLayout layout;
+} vk_descriptorset;
+
 typedef struct vk_tripipeline_info {
-  // shaders our beloved
-  // make sure to pass spirv
-  uint32_t* types;
-  uint32_t** shaders;
-  uint32_t num;
+  vk_shader* shaders;
+  uint32_t numshaders;
 
   // descriptors and push constants
   int desciptorsnum;
-  VkDescriptorSetLayoutBinding* descriptors;
+  VkDescriptorSetLayout* descriptors;
   uint32_t pushsize;
 
   // inputs and outputs
@@ -76,6 +83,9 @@ typedef struct vk_blas {
 } vk_blas;
 
 vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage);
+void vk_freebuffer(vk_buffer buffer);
+
+vk_shader vk_genshader(const char* shaderfile, VkShaderStageFlagBits shadertype, const char* entry);
 vk_tripipeline vk_gentripipeline(vk_tripipeline_info info);
 
 

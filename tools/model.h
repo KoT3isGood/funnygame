@@ -3,4 +3,4 @@
 #include "malloc.h"
 #include "stdint.h"
 
-void objtofmf(const char* file);
+void objtobmf(const char* file);
