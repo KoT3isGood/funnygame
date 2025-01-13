@@ -125,7 +125,11 @@ rerender:
           createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
           createInfo.window = window->wind;
           createInfo.dpy = dp;
-          vkCreateXlibSurfaceKHR(instance,&createInfo,0,&window->surface);
+          VkResult r = vkCreateXlibSurfaceKHR(instance,&createInfo,0,&window->surface);
+          if (r) {
+            printf("%i\n",r);
+            fuck("failed to create surface\n");
+          }
         }
 
         {
@@ -151,7 +155,10 @@ rerender:
 
           createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; 
           createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-          vkCreateSwapchainKHR(device, &createInfo, 0, &window->swapchain);  
+          VkResult r = vkCreateSwapchainKHR(device, &createInfo, 0, &window->swapchain);
+          if (r) {
+            fuck("failed to create swapchain\n");
+          }  
 
           uint32_t imageCount = 2;
           vkGetSwapchainImagesKHR(device, window->swapchain, &imageCount, window->images);

@@ -62,7 +62,6 @@ void draw_init() {
     createInfo.pApplicationInfo = &appInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     VkResult r = vkCreateInstance(&createInfo,0,&instance);
-    printf("%i\n",r);
   }
   {
     // device
@@ -191,7 +190,6 @@ void draw_flush() {
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   vkBeginCommandBuffer(cmd[imageIndex],&beginInfo);
-  draw_rendermodels();
   VkImageSubresourceRange isr = {};
   isr.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   isr.layerCount=1;
@@ -200,6 +198,7 @@ void draw_flush() {
     1,0,0,0
   };
   vkCmdClearColorImage(cmd[imageIndex],sys_getwindowimage(mainwindow), VK_IMAGE_LAYOUT_GENERAL,&ccv,1,&isr);
+  draw_rendermodels();
   vkEndCommandBuffer(cmd[imageIndex]);
 
   // flush
@@ -273,7 +272,7 @@ VkImageView vk_genimageview(const VkImage image, VkFormat format) {
 	VkImageViewCreateInfo imageViewCreateInfo={};
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	imageViewCreateInfo.format = format;
+	imageViewCreateInfo.format = format | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 	imageViewCreateInfo.image = image;
 	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -480,7 +479,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	depthAttachmentRef.attachment = 0;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-  VkAttachmentDescription* attachments = malloc(sizeof(VkAttachmentDescription*)*info.renderpassnum+1);
+  VkAttachmentDescription* attachments = malloc(sizeof(VkAttachmentDescription)*(info.renderpassnum+1));
 
 	attachments[info.renderpassnum].format = VK_FORMAT_D32_SFLOAT;
 	attachments[info.renderpassnum].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -492,7 +491,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	attachments[info.renderpassnum].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 
-  VkAttachmentReference* colorAttachments = malloc(sizeof(VkAttachmentDescription*)*info.renderpassnum);
+  VkAttachmentReference* colorAttachments = malloc(sizeof(VkAttachmentDescription)*info.renderpassnum);
 
   for (int i = 0;i<info.renderpassnum;i++) {
     attachments[i].format = info.renderpass->format;
@@ -503,6 +502,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
     attachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachments[i].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachments[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachments[i].flags=0;
 
     colorAttachments[i].attachment = i;
     colorAttachments[i].layout = VK_IMAGE_LAYOUT_GENERAL;
