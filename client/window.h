@@ -15,5 +15,7 @@ void sys_setwindowtitle(window wind, const char* title);
 void sys_destroywindow(window wind);
 bool sys_windowsexists(window wind);
 
+uint32_t* sys_getwindowsize(window wind);
+
 VkImage sys_getwindowimage(window wind);
 VkImageView sys_getwindowimageview(window wind);

@@ -15,7 +15,7 @@ VkSwapchainKHR* swapchains = 0;
 uint32_t* imageindexes;
 bool canrender = false;
 
-
+// handler for windows
 typedef struct xwindow {
   struct xwindow* next;
   Window wind;
@@ -26,8 +26,13 @@ typedef struct xwindow {
   VkImage images[2];
   VkImageView imageviews[2];
 } xwindow;
+
+// all windows handled at the moment
 xwindow* windows=0;
 
+// searches for window by name
+// returns window if found
+// returns 0 if not
 xwindow* findwindow(const char* name) {
   xwindow* window = 0;
   for(window=windows;window;window=(xwindow*)window->next) {
@@ -35,6 +40,10 @@ xwindow* findwindow(const char* name) {
   }
   return 0;
 };
+
+// searches for window by handle
+// returns window if found
+// returns 0 if not
 xwindow* findwindow2(Window wind) {
   xwindow* window = 0;
   for(window=windows;window;window=(xwindow*)window->next) {
@@ -44,6 +53,8 @@ xwindow* findwindow2(Window wind) {
 };
 
 void sys_initwindows() {
+  // setup x11
+
   dp = XOpenDisplay(NULL);
   if (!dp) {
     fuck("failed to open display");
@@ -59,10 +70,14 @@ extern VkDevice device;
 
 bool hasremade;
 void sys_prerender() {
+
+  // handle events
   XEvent ev;
   if (XPending(dp)) {
     XNextEvent(dp,&ev);
     switch(ev.type) {
+
+      // window is destroyed
       case DestroyNotify:
         ;
         xwindow* window = findwindow2(ev.xdestroywindow.window);
@@ -70,6 +85,7 @@ void sys_prerender() {
           printf("failed to find window\n");
           return;
         };
+        // since using references handle referencing
         if (window==windows) {
           windows = window->next;
           goto deletesuccess;
@@ -89,11 +105,13 @@ deletesuccess:
         free(window);
 
         break;
+      // TODO: handle keyboard
       case KeyPress:
         printf("pressing something\n");
         break;
     }
   }
+  // recreate list of swapchains
   if (!swapchains) {
     free(swapchains);
     free(imageindexes);
@@ -105,6 +123,7 @@ deletesuccess:
     swapchains[i]=window->swapchain;
     i+=1;
   }
+  // do not render if we dont have swapchains
   if (!windowcount) return;
   hasremade=false;
 rerender:
@@ -113,8 +132,9 @@ rerender:
   if (status) {
     canrender = false;
     if (status==1000001003) {
+      // recreate all the swapchains
+      // not ideal
       hasremade=true;
-      // resize
       for(window* wind=windows;wind;wind=((xwindow*)wind)->next) {
         ;
         xwindow* window = wind;
@@ -168,10 +188,8 @@ rerender:
         }
 
       };
-      printf("resizing done\n");
       goto rerender;
     }
-    printf("status: %i\n",status);
     return;
   };
   i=0;
@@ -190,8 +208,12 @@ void sys_deinitwindows() {
 };
 
 window sys_createwindow() {
-  xwindow* w = (xwindow*)calloc(1,sizeof(xwindow));
 
+  // create handle
+  xwindow* w = (xwindow*)malloc(sizeof(xwindow));
+  memset(w,0,sizeof(xwindow));
+
+  // create x11 window
   w->wind = XCreateSimpleWindow(dp,RootWindow(dp,screen),0,0,1280,720,1,0,0);
   XSelectInput(dp,w->wind, KeyPressMask | StructureNotifyMask);
   w->name = 0;
@@ -200,6 +222,7 @@ window sys_createwindow() {
   XMapWindow(dp,w->wind);
   XFlush(dp);
 
+  // create swapchains
   {
     VkXlibSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
@@ -270,4 +293,12 @@ VkImageView sys_getwindowimageview(window wind) {
 
 bool sys_windowsexists(window wind) {
   return findwindow2(((xwindow*)wind)->wind)>0;
+};
+uint32_t* sys_getwindowsize(window wind) {
+  XWindowAttributes attr;
+  XGetWindowAttributes(dp,((xwindow*)wind)->wind,&attr);
+  uint32_t* size = malloc(sizeof(uint32_t)*2);
+  size[0]=attr.width;
+  size[1]=attr.height;
+  return size;
 };

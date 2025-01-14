@@ -267,6 +267,8 @@ void vk_freebuffer(vk_buffer buffer) {
 };
 
 
+
+
 VkImageView vk_genimageview(const VkImage image, VkFormat format) {	
 	VkImageView imageView = 0;
 	VkImageViewCreateInfo imageViewCreateInfo={};
@@ -367,6 +369,7 @@ VkDescriptorSetLayout vk_gendescriptorset(uint32_t numbindings,VkDescriptorSetLa
 };
 
 vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
+
   vk_tripipeline pipeline;
 
   VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo={};
@@ -476,7 +479,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	VkAttachmentReference depthAttachmentRef={};
-	depthAttachmentRef.attachment = 0;
+	depthAttachmentRef.attachment = info.renderpassnum;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
   VkAttachmentDescription* attachments = malloc(sizeof(VkAttachmentDescription)*(info.renderpassnum+1));
@@ -489,9 +492,10 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	attachments[info.renderpassnum].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[info.renderpassnum].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	attachments[info.renderpassnum].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  attachments[info.renderpassnum].flags=0;
 
 
-  VkAttachmentReference* colorAttachments = malloc(sizeof(VkAttachmentDescription)*info.renderpassnum);
+  VkAttachmentReference* colorAttachments = malloc(sizeof(VkAttachmentReference)*info.renderpassnum);
 
   for (int i = 0;i<info.renderpassnum;i++) {
     attachments[i].format = info.renderpass->format;
@@ -558,4 +562,71 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	r = vkCreateGraphicsPipelines(device, 0, 1, &createInfo, 0, &pipeline.pipeline);
   free(stages);
   return pipeline;
+};
+
+
+vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
+  vk_image image = {};
+
+  VkImageCreateInfo imageInfo={};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.extent.width = x > 1 ? x : 1;
+	imageInfo.extent.height = y > 1 ? y : 1;
+	imageInfo.extent.depth = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+  imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  if (format == VK_FORMAT_D32_SFLOAT) {
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+  };
+  imageInfo.usage |=VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+  imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageInfo.format=format;	
+  vkCreateImage(device, &imageInfo, 0, &image.image);
+
+  VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(device, image.image, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo={};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findmemorytype(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	vkAllocateMemory(device, &allocInfo, 0, &image.memory);
+	vkBindImageMemory(device, image.image, image.memory, 0);
+
+  image.x=imageInfo.extent.width;
+  image.y=imageInfo.extent.width;
+  image.format=format;
+  return image;
+};
+void vk_freeimage(vk_image image) {
+  vkFreeMemory(device,image.memory,0);
+  vkDestroyImage(device,image.image,0);
+};
+
+void vk_barrier(vk_image image, VkImageLayout layout) {
+  VkImageMemoryBarrier imageMemoryBarrier = {};
+	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE_KHR;
+	imageMemoryBarrier.dstAccessMask = VK_ACCESS_NONE_KHR;
+	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	if (image.format == VK_FORMAT_D32_SFLOAT) {
+		imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	};
+	imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.image = image.image;  // The VkImage being transitioned
+	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+	imageMemoryBarrier.subresourceRange.levelCount = 1;
+	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	imageMemoryBarrier.subresourceRange.layerCount = 1;
+
+	vkCmdPipelineBarrier(cmd[imageIndex], VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, 0, 0, 0, 1, &imageMemoryBarrier);
 };

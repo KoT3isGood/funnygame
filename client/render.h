@@ -26,6 +26,14 @@ typedef struct vk_buffer {
   VkDeviceMemory memory;
 } vk_buffer;
 
+typedef struct vk_image {
+  uint32_t x;
+  uint32_t y;
+  VkFormat format;
+  VkImage image;
+  VkDeviceMemory memory;
+} vk_image;
+
 typedef struct vk_tripipeline {
   VkPipeline pipeline;
   VkPipelineLayout layout;
@@ -82,13 +90,19 @@ typedef struct vk_blas {
 	VkAccelerationStructureBuildGeometryInfoKHR geometryInfo;
 } vk_blas;
 
+
+// creates buffer
 vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage);
+// destroys buffer
 void vk_freebuffer(vk_buffer buffer);
 
+// creates shader handle
+// used in pipelines
 vk_shader vk_genshader(const char* shaderfile, VkShaderStageFlagBits shadertype, const char* entry);
 vk_tripipeline vk_gentripipeline(vk_tripipeline_info info);
 
-
-
+vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format);
+void vk_freeimage(vk_image image);
+void vk_barrier(vk_image image, VkImageLayout layout);
 VkImageView vk_genimageview(const VkImage image, VkFormat format);
 

@@ -38,7 +38,7 @@ void transform(
 [[vk::push_constant]]
 cbuffer constants {
   float4x4 vp;
-  uint32_t meshID;
+  //uint32_t meshID;
 }
 
 
@@ -70,6 +70,8 @@ vertexinfo vertex(
 // simply draw triangles with barycetrics and other mesh data
 // they will be shaded later
 [shader("fragment")]
-float4 fragment() {
-  return float4(1.0);
+float4 fragment( 
+  float3 barycentic: SV_Barycentrics
+) {
+  return float4(float3(barycentic),1.0);
 }
