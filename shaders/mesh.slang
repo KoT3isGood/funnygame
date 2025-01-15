@@ -60,7 +60,7 @@ vertexinfo vertex(
   uint32_t instanceID: SV_InstanceID,
 ) {
   vertexinfo tbr;
-  tbr.position = mul(vp,float4(position,1));
+  tbr.position = mul(vp,float4(position.x,position.y,position.z,1));
   tbr.triangleid = triangleID;
   tbr.instanceid = instanceID;
   tbr.meshid = 0;

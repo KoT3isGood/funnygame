@@ -3,11 +3,24 @@
 #include "window.h"
 #include "stdio.h"
 #include "../common/common.h"
+#include "../common/module.h"
+#include "stdlib.h"
+#include "unistd.h"
 
 window mainwindow;
 modelinfo m;
 model mdl;
 void client_init() {
+  module_t* kernel = module_fork("kernel");
+  if (!kernel) {
+    printf("\n");
+    printf("Failed to fork kernel module!\n");
+    printf("Game cannot run without kernel\n");
+    printf("Please verify game installation\n");
+    exit(1);
+  }
+
+
   sys_initwindows();
   draw_init();
 

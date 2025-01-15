@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include "../window.h"
 #include "../../includes/cglm/include/cglm/cglm.h"
+#include "../../includes/cglm/include/cglm/affine.h"
 extern VkInstance instance;
 
 extern VkPhysicalDevice physicalDevice;
@@ -203,9 +204,13 @@ void draw_rendermodels() {
     vkCmdBindVertexBuffers(cmd[imageIndex],0,1,&meshes[i].model->vertices.buffer,offsets);
     vkCmdBindIndexBuffer(cmd[imageIndex],meshes[i].model->indicies.buffer,0,VK_INDEX_TYPE_UINT32);
 
-
     mat4 matrix = GLM_MAT4_IDENTITY;
-    glm_perspective(90,(float)x/(float)y,0.01,100.0,matrix);
+    glm_translate(matrix,(vec4){0,0,-30,0});
+    glm_rotate(matrix,glm_rad(-45),(vec4){0,1,0,0});
+
+    mat4 perspectiv = GLM_MAT4_IDENTITY;
+    glm_perspective(glm_rad(90),(float)x/(float)y,0.01,100.0,perspectiv);
+    glm_mul(perspectiv,matrix,matrix);
     
 
     vkCmdPushConstants(cmd[imageIndex],pipeline.layout,VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,64,matrix);

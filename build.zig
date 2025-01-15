@@ -1,11 +1,23 @@
 const std = @import("std");
-// Although this function looks imperative, note that its job is to
-// declaratively construct a build graph that will be executed by an external
-// runner.
+const shadercompiler = @import("shaders/shadercompiler.zig");
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
+    const os = target.result.os.tag;
     const optimize = b.standardOptimizeOption(.{});
+    const wf = b.addWriteFiles();
+    _ = wf;
 
+    // libbrv
+    const _libbrv = b.dependency("libbrv", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const libbrv = _libbrv.artifact("brv");
+    if (os == .windows) {
+    }
+
+    // game source code
     const exe = b.addExecutable(.{
         .name = "funnygame",
         .target = target,
@@ -53,15 +65,35 @@ pub fn build(b: *std.Build) void {
     }
     exe.addIncludePath(b.path("./"));
     exe.addIncludePath(b.path("./includes/vulkan/include/"));
+    exe.addIncludePath(b.path("./modules/kernel/"));
     exe.addLibraryPath(b.path("./includes"));
+    exe.linkLibrary(libbrv);
+    const exeartifact = b.addInstallArtifact(exe,.{});
+    exeartifact.dest_dir=.{.custom = "../bin"};
+    b.getInstallStep().dependOn(&exeartifact.step);
 
-    const _libbrv = b.dependency("libbrv", .{
+    // kernel module
+    const kernelmodule = b.addSharedLibrary(.{
+        .name = "kernel",
         .target = target,
         .optimize = optimize,
     });
-    const libbrv = _libbrv.artifact("brv");
-    exe.linkLibrary(libbrv);
+    kernelmodule.addCSourceFiles(.{
+        .files = &.{
+            //
+            "modules/kernel/source/systemcall.c",
+        },
+    });
+    kernelmodule.addIncludePath(b.path("./modules/kernel/include"));
 
+    const kernelmoduleartifact = b.addInstallArtifact(kernelmodule, .{});
+    kernelmoduleartifact.dest_dir = .{ .custom = "../bin/kernel/" };
+    //kernelmoduleartifact.implib_dir = .{ .custom = "../bin/kernel/" };
+    //kernelmoduleartifact.pdb_dir = .{ .custom = "../bin/kernel/" };
+    b.getInstallStep().dependOn(&kernelmoduleartifact.step);
+
+
+    // tools
     const tools = b.addExecutable(.{
         .name = "tools",
         .target = target,
@@ -70,19 +102,24 @@ pub fn build(b: *std.Build) void {
     tools.linkLibC();
     tools.addCSourceFiles(.{ .files = &.{ "tools/main.c", "tools/model.c" } });
     tools.linkLibrary(libbrv);
-    b.exe_dir = "bin/";
 
-    b.installArtifact(tools);
-    b.installArtifact(exe);
 
+    const toolsartifact = b.addInstallArtifact(tools,.{});
+    toolsartifact.dest_dir=.{.custom = "../bin"};
+    b.getInstallStep().dependOn(&toolsartifact.step);
+
+    shadercompiler.compile(b,"shaders/mesh.slang");
+
+    // run it
     const run_cmd = b.addRunArtifact(exe);
-
     run_cmd.step.dependOn(b.getInstallStep());
 
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
-
+    run_cmd.setCwd(b.path("./bin/"));
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 }
+
+

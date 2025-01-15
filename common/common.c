@@ -9,16 +9,27 @@ void fuck(const char* why) {
   int* a = 0;
   *a=1;
 };
-const char* strclone(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  int size = vsnprintf(0,0,format,args);
-  size+=1;
-  char* a = (char*)malloc(size);
-  vsprintf(a, format, args);
-  va_end(args);
-  return a;
-};
+char* strclone(const char *format, ...) {
+    va_list args;
+    va_list args_copy;
+    va_start(args, format);
+
+    // Copy the va_list to use it for size calculation
+    va_copy(args_copy, args);
+
+    // Estimate the required size for the formatted string
+    int size = vsnprintf(NULL, 0, format, args_copy) + 1;
+
+    // Allocate memory for the result string
+    char *result = (char*)malloc(size);
+    if (result != NULL) {
+        vsnprintf(result, size, format, args);
+    }
+
+    va_end(args);
+    va_end(args_copy);
+    return result;
+}
 void print_hex(const unsigned char *data, size_t length) {
     size_t offset = 0;
 

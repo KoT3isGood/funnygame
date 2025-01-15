@@ -6,6 +6,13 @@
 #include "stdio.h"
 #include <dlfcn.h>
 
+struct metadata_t {
+  char* author;
+  unsigned int version;
+  unsigned int numdependencies;
+  char* dependencies;
+} metadata_t;
+
 module_t* module_fork(const char* name) {
   struct appinfo {
     void* handler;
@@ -13,54 +20,51 @@ module_t* module_fork(const char* name) {
 
   // get filepath to the shared object
 
-  int filepathsize = sizeof(name)*2+5;
-  char* filepath = malloc(filepathsize);
-  memset(filepath,0,filepathsize);
-
   module_t* module = malloc(sizeof(module_t));
-  module->name = strclone("%s",module);
-  strcat(filepath,module->name);
-  strcat(filepath,"/");
-  strcat(filepath,module->name);
-  strcat(filepath,".so");
-  module->objectwd=filepath;
 
+  module->name = strclone("%s",name);
+  module->objectwd = strclone("%s/lib%s.so", module->name, module->name);
+
+  // try to open handle
   void* handle = dlopen(module->objectwd,RTLD_LAZY);
   if (!handle) {
     printf("failed to open module: %s\n",module->name);
-    free(filepath);
+    free(module->name);
+    free(module->objectwd);
     free(module);
     return 0;
   }
- 
-  // module_init is prebuilt
   void(*module_init)(struct appinfo) = dlsym(handle,"module_init");
   if (!module_init) {
     printf("%s: failed to find symbol: module_init\n",module->name);
-    printf("it has to be defined as such:\n");
-    printf("void module_init(struct appinfo)\n");
-    free(filepath);
+    printf("look at manual for module_init\n");
+    free(module->name);
+    free(module->objectwd);
     free(module);
     dlclose(handle);
     return 0;
   }
   module_init(appinfo);
 
+  // look for main
   int(*module_main)() = dlsym(handle,"main");
   if (!module_main) {
     printf("%s: failed to find symbol: main\n",module->name);
-    printf("it has to be defined as such:\n");
-    printf("int main()\n");
-    free(filepath);
+    free(module->name);
+    free(module->objectwd);
     free(module);
     dlclose(handle);
     return 0;
   }
+
+  // now run main
   int result = module_main();
+  if (!result) {
+    
+  }
 
 
   return module;
 };
 void module_kill(module_t* module) {
-  
 };

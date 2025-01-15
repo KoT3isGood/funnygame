@@ -26,6 +26,6 @@ typedef struct {
 
 
 void fuck(const char* why);
-const char* strclone(const char* format, ...);
+char* strclone(const char *format, ...);
 modelinfo readmodel(const char* file);
 void print_hex(const unsigned char *data, uint64_t length);
