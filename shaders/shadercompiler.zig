@@ -7,7 +7,7 @@ pub fn compile(b: *std.Build, path: []const u8) void {
         "spirv",
         "-o",
     });    
-    const path2: []const u8 = replaceSlangWithSpv(path) catch |errormsg| {
+    const path2: []const u8 = replacefilename(path) catch |errormsg| {
         std.debug.print("Error occurred: {}\n", .{errormsg});
         return;
     };
@@ -18,19 +18,16 @@ pub fn compile(b: *std.Build, path: []const u8) void {
 
     shadercompiler_cmd.addFileArg(b.path(path));
     std.debug.print("compiling {s}\n", .{path});
-    //std.debug.print("Error occurred: {s}\n", .{result});
 }
 
-fn replaceSlangWithSpv(input: []const u8) ! []const u8 {
+fn replacefilename(input: []const u8) ! []const u8 {
     var builder = std.ArrayList(u8).init(std.heap.page_allocator);
    
     var i:usize = 0;
     const slang = ".slang";
     const spv = ".spv";
-    
-    // Loop through the input buffer
+
     while (i < input.len) {
-        // Check if the substring ".slang" exists
         if (i + slang.len <= input.len and std.mem.eql(u8, input[i .. i + slang.len], slang)) {
           // If found, append ".spv"
             try builder.appendSlice(spv);
