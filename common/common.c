@@ -5,9 +5,8 @@
 #include "math.h"
 
 void fuck(const char* why) {
-  printf("%s\n",why);
-  int* a = 0;
-  *a=1;
+  printf("%s",why);
+  exit(1);
 };
 char* strclone(const char *format, ...) {
     va_list args;

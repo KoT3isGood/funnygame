@@ -131,11 +131,9 @@ void draw_rendermodels() {
   if (!numdrawedmodels) {
     return;
   }
-  uint32_t* size = sys_getwindowsize(mainwindow);
   
-  int x = size[0];
-  int y = size[1];
-  free(size);
+  int x = sys_getwindowidth(mainwindow);
+  int y = sys_getwindoheight(mainwindow);
 	if (fb) {
 		vkDestroyFramebuffer(device, fb, 0);
     vkDestroyImageView(device,depthp,0);
@@ -160,6 +158,16 @@ void draw_rendermodels() {
 	vkCreateFramebuffer(device, &framebufferInfo, 0, &fb);
 
 
+  vk_barrier(depth,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+  VkClearDepthStencilValue depthval = {};
+  depthval.depth=1;
+  VkImageSubresourceRange subresourceRange ={};
+	subresourceRange.baseMipLevel = 0;
+	subresourceRange.levelCount = 1;
+	subresourceRange.baseArrayLayer = 0;
+	subresourceRange.layerCount = 1;
+  subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+  vkCmdClearDepthStencilImage(cmd[imageIndex],depth.image,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,&depthval,1,&subresourceRange);
 
 	VkRenderPassBeginInfo renderPassInfo={};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -187,16 +195,6 @@ void draw_rendermodels() {
 	scissor.extent = (VkExtent2D){ x,y };
 	vkCmdSetScissor(cmd[imageIndex], 0, 1, &scissor);
 
-  vk_barrier(depth,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-  VkClearDepthStencilValue depthval = {};
-  depthval.depth=1;
-  VkImageSubresourceRange subresourceRange ={};
-	subresourceRange.baseMipLevel = 0;
-	subresourceRange.levelCount = 1;
-	subresourceRange.baseArrayLayer = 0;
-	subresourceRange.layerCount = 1;
-  subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-  vkCmdClearDepthStencilImage(cmd[imageIndex],depth.image,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,&depthval,1,&subresourceRange);
   for (int i = 0;i<numuniquemodels;i++) {
     VkDeviceSize offsets[1] = {
       0
@@ -205,8 +203,7 @@ void draw_rendermodels() {
     vkCmdBindIndexBuffer(cmd[imageIndex],meshes[i].model->indicies.buffer,0,VK_INDEX_TYPE_UINT32);
 
     mat4 matrix = GLM_MAT4_IDENTITY;
-    glm_translate(matrix,(vec4){0,0,-30,0});
-    glm_rotate(matrix,glm_rad(-45),(vec4){0,1,0,0});
+    glm_translate(matrix,(vec4){0,0,-3,0});
 
     mat4 perspectiv = GLM_MAT4_IDENTITY;
     glm_perspective(glm_rad(90),(float)x/(float)y,0.01,100.0,perspectiv);

@@ -1,6 +1,7 @@
 #include "render.h"
 #include "vulkan/vulkan.h"
 #include "stdio.h"
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 #ifdef __linux
 #include "X11/Xlib.h"
@@ -29,8 +30,8 @@ VkCommandBuffer stagingCommandBuffer;
 VkCommandPool stagingCommandPool;
 
 VkFence fence[2];
-VkSemaphore graphicsSemaphore[16];
-VkSemaphore presentSemaphore[16];
+extern VkSemaphore* graphicsSemaphore;
+extern VkSemaphore* presentSemaphore;
 
 
 int imageIndex;
@@ -86,19 +87,29 @@ void draw_init() {
     queueCreateInfo.queueFamilyIndex = 0;
     queueCreateInfo.queueCount = 1;
     queueCreateInfo.pQueuePriorities = &priority; 
+    VkPhysicalDeviceVulkan12Features pdv12={};
+    pdv12.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    pdv12.bufferDeviceAddress = VK_TRUE;
+
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR pdfsbf = {};
+    pdfsbf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
+    pdfsbf.fragmentShaderBarycentric = VK_TRUE;
+    pdfsbf.pNext=&pdv12;
 
     const char* extensions[] = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+      VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
+      VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME,
     };
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.enabledLayerCount = 0;
-    createInfo.enabledExtensionCount = 1;
+    createInfo.enabledExtensionCount = sizeof(extensions)/sizeof(const char*);
     createInfo.ppEnabledExtensionNames = extensions;
     createInfo.queueCreateInfoCount = 1;
     createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.pNext = &pdfsbf;
     vkCreateDevice(physicalDevice,&createInfo, 0, &device);
     vkGetDeviceQueue(device,0,0,&draw);
     vkGetDeviceQueue(device,0,0,&present);
@@ -140,11 +151,6 @@ void draw_init() {
       vkCreateFence(device, &fenceCreateInfo, 0, &fence[i]);
     }
 
-    // hardcode 16 windows lol
-    for (uint32_t i = 0; i < 16;i++) {
-      vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &graphicsSemaphore[i]);
-      vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &presentSemaphore[i]);
-    }
   }
   printf("created drawer\n");
 
@@ -154,25 +160,21 @@ void draw_init() {
 extern int windowcount;
 extern VkSwapchainKHR* swapchains;
 extern uint32_t* imageindexes;
-extern bool hasremade;
 
 
-int draw_sync() {
-  if (!hasremade) {
+void draw_sync() {
+
+  // nothing to draw
+  if (!windowcount) {
+    return;
+  }
+
   vkWaitForFences(device,1,&fence[imageIndex],VK_TRUE,UINT64_MAX);
   vkResetFences(device,1,&fence[imageIndex]);
-  }
 
-  if (!windowcount) {
-    return 1;
-  }
   for (int i = 0; i<windowcount;i++) {
-    VkResult r = vkAcquireNextImageKHR(device, swapchains[i], UINT64_MAX,presentSemaphore[i], 0, &imageindexes[i]);
-    if (r!=VK_SUCCESS) {
-      return r;
-    };
+    VkResult r = vkAcquireNextImageKHR(device, swapchains[i], UINT64_MAX, presentSemaphore[i], 0, &imageindexes[i]);
   }
-  return 0;
 };
 
 extern window mainwindow;
@@ -274,7 +276,7 @@ VkImageView vk_genimageview(const VkImage image, VkFormat format) {
 	VkImageViewCreateInfo imageViewCreateInfo={};
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	imageViewCreateInfo.format = format | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+	imageViewCreateInfo.format = format;
 	imageViewCreateInfo.image = image;
 	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -584,6 +586,7 @@ vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
   imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   imageInfo.format=format;	
+  imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
   vkCreateImage(device, &imageInfo, 0, &image.image);
 
   VkMemoryRequirements memRequirements;

@@ -1,10 +1,3 @@
-struct vertexinfo {
-  float4 position : SV_Position;
-  uint32_t triangleid;
-  uint32_t instanceid;
-  uint32_t meshid;
-}
-
 struct mesh {
   float3* vertices;
   uint3* indicies;
@@ -49,29 +42,27 @@ struct instances {
   uint32_t numinstances;
 }
 
-[[vk::binding(0,1)]]
+[[vk::binding(1,0)]]
 Buffer<instances> batches;
 
+struct vertexresult {
+  float4 position: SV_Position;
+};
 
 [shader("vertex")]
-vertexinfo vertex(
+vertexresult vertex(
   float3 position: POSITION,
-  uint32_t triangleID: SV_PrimitiveID,
-  uint32_t instanceID: SV_InstanceID,
 ) {
-  vertexinfo tbr;
-  tbr.position = mul(vp,float4(position.x,position.y,position.z,1));
-  tbr.triangleid = triangleID;
-  tbr.instanceid = instanceID;
-  tbr.meshid = 0;
-  return tbr;  
+  return {mul(vp,float4(position.x,position.y,position.z,1))};
 }
 
 // simply draw triangles with barycetrics and other mesh data
 // they will be shaded later
 [shader("fragment")]
 float4 fragment( 
-  float3 barycentic: SV_Barycentrics
+  float3 barycentic: SV_Barycentrics,
+  uint32_t triangleID: SV_PrimitiveID,
+  uint32_t instanceID: SV_InstanceID,
 ) {
-  return float4(float3(barycentic),1.0);
+  return float4(float3(barycentic),0.5);
 }
