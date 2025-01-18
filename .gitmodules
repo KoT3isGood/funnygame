@@ -3,4 +3,7 @@
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
 [submodule "includes/libbrv"]
 	path = includes/libbrv
-	url = https://github.com/KoT3isGood/libbrv.git 
+  url = https://github.com/KoT3isGood/libbrv.git 
+[submodule "includes/cglm"]
+	path = includes/cglm
+	url = https://github.com/recp/cglm.git

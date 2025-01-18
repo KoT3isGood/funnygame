@@ -39,7 +39,6 @@ int imageIndex;
 void draw_initmodels();
 void draw_init() { 
   {
-    printf("drawing\n");
     // instance
     // 1.3 is required
     // might migrate soon to 1.4

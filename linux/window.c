@@ -13,7 +13,6 @@ int screen;
 int windowcount;
 VkSwapchainKHR* swapchains = 0;
 uint32_t* imageindexes;
-char canrender = 0;
 
 VkSemaphore* graphicsSemaphore;
 VkSemaphore* presentSemaphore;
@@ -65,7 +64,7 @@ window_handle_t createwindow() {
   window_handle_t handle = {};
   handle.window = XCreateSimpleWindow(display,RootWindow(display,screen),0,0,1280,720,1,0,0);
   handle.name=0;
-  XSelectInput(display,handle.window, StructureNotifyMask|KeyPressMask | StructureNotifyMask);
+  XSelectInput(display,handle.window, ExposureMask|StructureNotifyMask|KeyPressMask);
   
   XMapWindow(display,handle.window);
   XFlush(display);
@@ -159,73 +158,7 @@ void sys_render() {
   draw_flush();
 };
 
-void sys_prerender() {
-  vkDeviceWaitIdle(device);
-  XEvent ev;
-  if (XPending(display)) {
-    XNextEvent(display,&ev);
-    window_t* window; 
-    window_handle_t* w; 
-    printf("event\n");
-    switch(ev.type) {
-      case ConfigureNotify:
-        printf("resizing\n");
-        ;
-        XConfigureEvent xce = ev.xconfigure;
- 
-        window = findwindow2(ev.xdestroywindow.window);
-        w=window->handle;
-
-        *w=destroyswapchain(*w);
-        *w=createswapchain(*w);
-        w->width=xce.width;
-        w->height=xce.height;
-
-        break;
-      // TODO: handle keyboard
-      case KeyPress:
-        printf("pressing something\n");
-        break;
-      // window is destroyed
-      case ClientMessage:
-        if ((Atom)ev.xclient.data.l[0] == WM_DELETE_WINDOW) {
-          printf("deleting window with atom\n");
-          window=findwindow2(ev.xany.window);
-          goto deletetry;
-        }
-        break;
-deletetry:
-        w=window->handle;
-        if (!window) {
-          printf("failed to find window\n");
-          return;
-        };
-        // since using references handle referencing
-        if (window==windows) {
-          windows = window->next;
-          goto deletesuccess;
-        }
-
-        window_t* wind;
-        for(wind=windows;wind;wind=(window_t*)wind->next) {
-          if ((window_t*)wind->next==window) {
-            wind->next = window->next;
-            break;
-          };
-        };
-        goto deletesuccess;
-
-deletesuccess:
-        windowcount--;
-        window_handle_t* w=window->handle;
-        *w=destroyswapchain(*w);
-        *w=destroywindow(*w);
-
-
-        break;
-
-    }
-  }  
+void handlesync() {
   if (!swapchains) {
     free(swapchains);
     free(imageindexes);
@@ -251,7 +184,84 @@ deletesuccess:
     w->imageIndex=imageindexes[i];
     i++;
   }
+} 
+
+void sys_prerender() {
+  vkDeviceWaitIdle(device);
+  XEvent ev;
+  if (XPending(display)) {
+    int numevents = XEventsQueued(display,QueuedAfterFlush);
+    for (int i = 0;i<numevents;i++) {
+      XNextEvent(display,&ev);
+      window_t* window; 
+      window_handle_t* w; 
+      switch(ev.type) {
+        case ConfigureNotify:
+          ;
+          XConfigureEvent xce = ev.xconfigure;
+          window = findwindow2(xce.window);
+          w=window->handle;
+          if (w->width!=xce.width || w->height!=xce.height) {
+            printf("resizing\n");
+
+            *w=destroyswapchain(*w);
+            *w=createswapchain(*w);
+            w->width=xce.width;
+            w->height=xce.height;
+
+          } 
+          break;
+        // TODO: handle keyboard
+        case KeyPress:
+          printf("pressing something\n");
+          break;
+        case Expose:
+          printf("redrawing stuff\n");
+          break;
+        // window is destroyed
+        case ClientMessage:
+          if ((Atom)ev.xclient.data.l[0] == WM_DELETE_WINDOW) {
+            window=findwindow2(ev.xany.window);
+            goto deletetry;
+          }
+          break;
+  deletetry:
+          w=window->handle;
+          if (!window) {
+            printf("failed to find window\n");
+            return;
+          };
+          // since using references handle referencing
+          if (window==windows) {
+            windows = window->next;
+            goto deletesuccess;
+          }
+
+          window_t* wind;
+          for(wind=windows;wind;wind=(window_t*)wind->next) {
+            if ((window_t*)wind->next==window) {
+              wind->next = window->next;
+              break;
+            };
+          };
+          goto deletesuccess;
+
+  deletesuccess:
+          windowcount--;
+          window_handle_t* w=window->handle;
+          *w=destroyswapchain(*w);
+          *w=destroywindow(*w);
+          free(window->handle);
+          window->handle=0;
+
+
+          break;
+      }
+    }
+  }
+  handlesync();
 };
+
 
 window sys_createwindow() {
   window_t* handle = malloc(sizeof(window_t));
