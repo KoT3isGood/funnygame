@@ -15,7 +15,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     const libbrv = _libbrv.artifact("brv");
-    if (os == .windows) {}
+
+    if (os == .windows) {
+        const libbrv_dll = libbrv.getEmittedBin();
+        b.getInstallStep().dependOn(&b.addInstallFileWithDir(libbrv_dll, .{ .custom = "../bin" }, "brv.dll").step);
+    }
 
     // game source code
     const exe = b.addExecutable(.{
@@ -39,7 +43,7 @@ pub fn build(b: *std.Build) void {
             "client/render/model.c",
         },
     });
-    if (target.result.os.tag == .windows) {
+    if (os == .windows) {
         exe.linkSystemLibrary("ws2_32");
         exe.linkSystemLibrary("vulkan-1");
         exe.addCSourceFiles(.{
@@ -51,7 +55,7 @@ pub fn build(b: *std.Build) void {
             },
         });
     }
-    if (target.result.os.tag == .linux) {
+    if (os == .linux) {
         exe.linkSystemLibrary("X11");
         exe.linkSystemLibrary("vulkan");
         exe.addCSourceFiles(.{
@@ -84,13 +88,13 @@ pub fn build(b: *std.Build) void {
             "modules/kernel/source/systemcall.c",
         },
     });
-    if (target.result.os.tag == .windows) kernelmodule.addCSourceFile(.{ .file = b.path("modules/windows.c") });
+    if (os == .windows) kernelmodule.addCSourceFile(.{ .file = b.path("modules/windows.c") });
     kernelmodule.addIncludePath(b.path("./modules/kernel/include"));
 
     const kernelmoduleartifact = b.addInstallArtifact(kernelmodule, .{});
     kernelmoduleartifact.dest_dir = .{ .custom = "../bin/kernel/" };
-    if (target.result.os.tag == .windows) kernelmoduleartifact.implib_dir = kernelmoduleartifact.dest_dir;
-    if (target.result.os.tag == .windows) kernelmoduleartifact.pdb_dir = kernelmoduleartifact.dest_dir;
+    if (os == .windows) kernelmoduleartifact.implib_dir = kernelmoduleartifact.dest_dir;
+    if (os == .windows) kernelmoduleartifact.pdb_dir = kernelmoduleartifact.dest_dir;
     b.getInstallStep().dependOn(&kernelmoduleartifact.step);
 
     // tools

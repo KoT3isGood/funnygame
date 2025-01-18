@@ -8,7 +8,6 @@
 #include "vulkan/vulkan_win32.h"
 
 
-Display* display;
 int screen;
 int windowcount;
 VkSwapchainKHR* swapchains = 0;
@@ -40,7 +39,7 @@ typedef struct window_handle_t {
   int height;
 } window_handle_t;
 
-window_t* findwindow2(Window wind) {
+window_t* findwindow2(HWND wind) {
   window_t* window = 0;
   for(window=windows;window;window=(window_t*)window->next) {
     if (wind == ((window_handle_t*)window->handle)->window) return window;
@@ -49,40 +48,56 @@ window_t* findwindow2(Window wind) {
 };
 
 void sys_initwindows() {
-  // open x11 display
-  display = XOpenDisplay(0);
-  if (!display) {
-    fuck("failed to open display");
-  }
-  screen = DefaultScreen(display);
-  WM_DELETE_WINDOW = XInternAtom(display, "WM_DELETE_WINDOW", False);
+  
 };
+
+LRESULT handlewindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 window_handle_t createwindow() {
   windowcount++;
 
   window_handle_t handle = {};
-  handle.window = XCreateSimpleWindow(display,RootWindow(display,screen),0,0,1280,720,1,0,0);
   handle.name=0;
-  XSelectInput(display,handle.window, StructureNotifyMask|KeyPressMask | StructureNotifyMask);
-  
-  XMapWindow(display,handle.window);
-  XFlush(display);
+
+ const char* CLASS_NAME  = "brWindow";
+
+  WNDCLASS wc = { };
+
+  wc.lpfnWndProc   = handlewindow;
+  wc.lpszClassName = CLASS_NAME;
+
+  RegisterClassA(&wc);
+
+  handle.window = CreateWindowExA(
+    0,                              // Optional window styles.
+    CLASS_NAME,                     // Window class
+    "",    // Window text
+    WS_OVERLAPPEDWINDOW,            // Window style
+
+    // Size and position
+    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+
+    NULL,       // Parent window    
+    NULL,       // Menu
+    NULL,  // Instance handle
+    NULL        // Additional application data
+    );
+  if (handle.window == NULL)
+  {
+      fuck("failed to create window");
+  }
+
+  ShowWindow(handle.window, 1);
+  UpdateWindow(handle.window);
 
   return handle;
 }
 window_handle_t createswapchain(window_handle_t handle) {
   {
-    VkXlibSurfaceCreateInfoKHR createInfo = {};
+    VkWin32SurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    createInfo.window = handle.window;
-    createInfo.dpy = display;
-    VkResult r = vkCreateXlibSurfaceKHR(instance,&createInfo,0,&handle.surface);
-    if (r) {
-      printf("%i\n",r);
-      fuck("failed to create surface\n");
-    }
-  }
+    createInfo.hwnd = handle.window;
+    vkCreateWin32SurfaceKHR(instance,&createInfo,0,&handle.surface);  }
 
   {
     VkSurfaceCapabilitiesKHR capabilies={};
@@ -150,7 +165,6 @@ window_handle_t destroywindow(window_handle_t handle) {
     handle.graphicsSemaphore[i]=0;
     handle.presentSemaphore[i]=0;
   }
-  XDestroyWindow(display,handle.window);
   handle.window=0;
   return handle;
 }
@@ -160,71 +174,6 @@ void sys_render() {
 
 void sys_prerender() {
   vkDeviceWaitIdle(device);
-  XEvent ev;
-  if (XPending(display)) {
-    XNextEvent(display,&ev);
-    window_t* window; 
-    window_handle_t* w; 
-    printf("event\n");
-    switch(ev.type) {
-      case ConfigureNotify:
-        printf("resizing\n");
-        ;
-        XConfigureEvent xce = ev.xconfigure;
- 
-        window = findwindow2(ev.xdestroywindow.window);
-        w=window->handle;
-
-        *w=destroyswapchain(*w);
-        *w=createswapchain(*w);
-        w->width=xce.width;
-        w->height=xce.height;
-
-        break;
-      // TODO: handle keyboard
-      case KeyPress:
-        printf("pressing something\n");
-        break;
-      // window is destroyed
-      case ClientMessage:
-        if ((Atom)ev.xclient.data.l[0] == WM_DELETE_WINDOW) {
-          printf("deleting window with atom\n");
-          window=findwindow2(ev.xany.window);
-          goto deletetry;
-        }
-        break;
-deletetry:
-        w=window->handle;
-        if (!window) {
-          printf("failed to find window\n");
-          return;
-        };
-        // since using references handle referencing
-        if (window==windows) {
-          windows = window->next;
-          goto deletesuccess;
-        }
-
-        window_t* wind;
-        for(wind=windows;wind;wind=(window_t*)wind->next) {
-          if ((window_t*)wind->next==window) {
-            wind->next = window->next;
-            break;
-          };
-        };
-        goto deletesuccess;
-
-deletesuccess:
-        windowcount--;
-        window_handle_t* w=window->handle;
-        *w=destroyswapchain(*w);
-        *w=destroywindow(*w);
-
-
-        break;
-
-    }
-  }  
   if (!swapchains) {
     free(swapchains);
     free(imageindexes);
@@ -258,6 +207,7 @@ window sys_createwindow() {
   window_handle_t* w=(window_handle_t*)handle->handle;
   *w=createwindow();
   *w=createswapchain(*w);
+  SetWindowLongPtr(w->window, GWLP_USERDATA,(long long)w);
 
   handle->next=windows;
   windows=handle;
@@ -272,7 +222,6 @@ void sys_setwindowsize(window wind, int x, int y, int width, int height) {
   window_handle_t* w=(window_handle_t*)wind->handle;
   w->width=width;
   w->height=height;
-  XMoveResizeWindow(display, w->window, x,y,width,height);
   return; 
 };
 
@@ -282,7 +231,6 @@ void sys_setwindowtitle(window wind, const char* title) {
   };
   window_handle_t* w=(window_handle_t*)wind->handle;
   w->name=strclone("%s",title);
-  XStoreName(display,w->window,title);
 };
 
 void sys_destroywindow(window wind) {
@@ -291,7 +239,6 @@ void sys_destroywindow(window wind) {
   };
 };
 void sys_deinitwindows() {
-  XCloseDisplay(display);
 }
 
 bool sys_windowsexists(window wind) {
@@ -319,3 +266,12 @@ VkImageView sys_getwindowimageview(window wind) {
   window_handle_t* w=(window_handle_t*)wind->handle;
   return w->imageviews[w->imageIndex];
 };
+
+LRESULT handlewindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  window_t* window = (window_t*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+  switch (uMsg) {
+	case WM_DESTROY:
+	
+
+  }
+}
