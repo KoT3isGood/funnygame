@@ -7,3 +7,6 @@
 [submodule "includes/cglm"]
 	path = includes/cglm
 	url = https://github.com/recp/cglm.git
+[submodule "includes/Vulkan-Utility-Libraries"]
+	path = includes/Vulkan-Utility-Libraries
+	url = https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git
