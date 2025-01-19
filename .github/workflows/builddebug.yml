@@ -9,14 +9,21 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{matrix.os}}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
       - run: zig build
+
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
       - run: zig fmt --check .
