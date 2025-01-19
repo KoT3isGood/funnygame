@@ -32,8 +32,8 @@ typedef struct window_handle_t {
   Window window;
   VkImage* images;
   VkImageView* imageviews;
-  VkSemaphore graphicsSemaphore[2];
-  VkSemaphore presentSemaphore[2];
+  VkSemaphore* graphicsSemaphore;
+  VkSemaphore* presentSemaphore;
   int x;
   int y;
   int width;
@@ -78,10 +78,7 @@ window_handle_t createswapchain(window_handle_t handle) {
     createInfo.window = handle.window;
     createInfo.dpy = display;
     VkResult r = vkCreateXlibSurfaceKHR(instance,&createInfo,0,&handle.surface);
-    if (r) {
-      printf("%i\n",r);
-      fuck("failed to create surface\n");
-    }
+    VK_PRINTRES("vkCreateXlibSurfaceKHR",r);
   }
 
   {
@@ -96,36 +93,36 @@ window_handle_t createswapchain(window_handle_t handle) {
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,handle.surface,&numformats,0);
     VkSurfaceFormatKHR* formats = malloc(sizeof(VkSurfaceFormatKHR)*numformats);
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,handle.surface,&numformats,formats);
+
+
     createInfo.imageFormat = formats[0].format;
     free(formats);
 
     createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     createInfo.imageExtent = capabilies.minImageExtent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     createInfo.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
     createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; 
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     VkResult r = vkCreateSwapchainKHR(device, &createInfo, 0, &handle.swapchain);
-    if (r) {
-      fuck("failed to create swapchain\n");
-    }  
+    VK_PRINTRES("vkCreateSwapchainKHR",r);
 
     uint32_t imageCount = 0;
     vkGetSwapchainImagesKHR(device, handle.swapchain, &imageCount, 0);
     handle.images=malloc(sizeof(VkImage)*imageCount);
     handle.imageviews=malloc(sizeof(VkImageView)*imageCount);
     VkResult res = vkGetSwapchainImagesKHR(device, handle.swapchain, &imageCount, handle.images);
-    for (uint32_t i = 0; i < 2; i++) {
-      handle.imageviews[i]=vk_genimageview(handle.images[i],createInfo.imageFormat );
-    } 
+    handle.graphicsSemaphore=malloc(sizeof(VkSemaphore)*imageCount);
+    handle.presentSemaphore=malloc(sizeof(VkSemaphore)*imageCount);
     VkSemaphoreCreateInfo semaphoreCreateInfo={};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    for (int i = 0;i<2;i++) {
-    vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.graphicsSemaphore[i]);
-    vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.presentSemaphore[i]);
-    }
+    for (uint32_t i = 0; i < createInfo.minImageCount; i++) {
+      handle.imageviews[i]=vk_genimageview(handle.images[i],createInfo.imageFormat );
+      vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.graphicsSemaphore[i]);
+      vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.presentSemaphore[i]);
+    } 
   }
   return handle;
 }

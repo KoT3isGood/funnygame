@@ -11,8 +11,7 @@ typedef struct metadata_t {
 } metadata_t;
 
 typedef struct moduleinput_t {
-  void(*fork)(void);
-  pid_t(*open)(const char*,int);
+  pid_t(*fork)(void);
   
 } moduleinput_t;
 

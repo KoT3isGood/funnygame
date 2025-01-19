@@ -2,6 +2,7 @@
 #include "vulkan/vulkan.h"
 #include "../common/common.h"
 #include <vulkan/vulkan_core.h>
+#include "vulkan/vk_enum_string_helper.h"
 #include "stdbool.h"
 
 
@@ -158,4 +159,8 @@ void vk_barrier(vk_image image, VkImageLayout layout);
 
 // Generates image view
 VkImageView vk_genimageview(const VkImage image, VkFormat format);
+
+#define VK_PRINTRES(b,a) \
+if (a<0) {printf("%s : %i (%s)\n", b, a, string_VkResult(a)); fuck("\n");} \
+if (a>0) printf("%s : %i (%s)\n", b, a, string_VkResult(a))
 

@@ -1,10 +1,10 @@
-- From Ashik: ADD COMMENTS!!!😭 (At least for the draw functions from render.h)
-
-- Texture and buffer generation
+RENDERING
 - Load models from own standart
-- Create basic model rendering
+    software barycentics
+    shading
+    draw textures
 
-- Create world serialization
-- Draw stuff from the world
+MODULES
+- 
 
 - Finish this list

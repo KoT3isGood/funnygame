@@ -1,6 +1,6 @@
-#include "../client/client.h"
+#include "client.h"
 
-int main(int argc, char** argv) {
+int main() {
   client_init();
   while (client_shouldrun()) {
     client_frame();

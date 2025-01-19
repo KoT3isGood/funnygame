@@ -2,22 +2,24 @@
 #include "common.h"
 
 typedef enum {
-  CVAR_READONLY = 0x01,   // is read only
-  CVAR_PROTECTED = 0x01,   // is protected by the server
+  CVAR_READONLY = 0x01,   // read only
+  CVAR_PROTECTED = 0x02,   // protected by the server
+  CVAR_RETURNVALID = 0x04
 } cvar_flag;
 
 typedef struct cvar_t {
   struct cvar_t* next;
   const char* name;
   const char* value;
+  const char* description;
   int flags;
 } cvar_t;
 
 
 // returns cvar if exists
 // creates and returns var if doesn't exist
-cvar_t* cvar_get(const char* name, const char* value, int flags);
-cvar_t* cvar_fget(const char* name, float value, int flags);
+cvar_t* cvar_get(const char* name, const char* value, int flags, const char* description);
+cvar_t* cvar_fget(const char* name, float value, int flags, const char* description);
 
 
 // sets cvar's value

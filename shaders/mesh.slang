@@ -4,15 +4,10 @@ struct mesh {
   float4x4 matrix;
   uint32_t id;
 }
-
-// compute shader for computing transform matrices
-// too expensive to do on cpu
-
 struct constants {
   float4x4 viewprojection;
 }
 
-// TODO: make more threads per batch
 [shader("compute")]
 [numthreads(1,1,1)]
 void transform(
@@ -22,16 +17,16 @@ void transform(
   uniform uint32_t nummatrices,
   uniform constants c,
 ) {
-  for (int i = 0;i<nummatrices;i++) {
-    matrices[i]=matrices[i]*c.viewprojection;
-  }
+  // code which causes the hung 
+  //for (int i = 0;i<nummatrices;i++) {
+  //  matrices[i]=matrices[i]*c.viewprojection;
+  //}
   return;
 }
 
 [[vk::push_constant]]
 cbuffer constants {
   float4x4 vp;
-  //uint32_t meshID;
 }
 
 
@@ -57,7 +52,6 @@ vertexresult vertex(
 }
 
 // simply draw triangles with barycetrics and other mesh data
-// they will be shaded later
 [shader("fragment")]
 float4 fragment( 
   float3 barycentic: SV_Barycentrics,

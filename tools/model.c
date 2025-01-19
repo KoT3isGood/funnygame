@@ -113,18 +113,36 @@ void objtobmf(const char* file) {
   const char* ending = ".bmf";
   memcpy(outputFileName+outputFileNameLen-4,ending, 5);
 
+  brv_parameter parameters[4] = {};
+  parameters[0].name="Indices";
+  parameters[0].size=indicies;
+  parameters[0].data=indexBufferAlloc;
+  parameters[1].name="UVIndices";
+  parameters[1].size=indicies;
+  parameters[1].data=uvIndexBufferAlloc;
+  parameters[2].name="Vertices";
+  parameters[2].size=vertices;
+  parameters[2].data=vertexBufferAlloc;
+  parameters[3].name="UVs";
+  parameters[3].size=vertices;
+  parameters[3].data=vertexBufferAlloc;
+  brv_object staticMesh = {};
+  staticMesh.name="Mesh";
+  staticMesh.numparameters=4;
+  staticMesh.parameters=parameters;
+
+  brv_vehicle model = {};
+  model.version=7;
+  model.bricks=&staticMesh;
+  unsigned char* outputdata;
+  unsigned int outputdatasize;
+  brv_build(model,&outputdatasize,&outputdata);
+
   fclose(fopen(outputFileName, "w"));
   FILE* outputFile = fopen(outputFileName, "ab");
-  fwrite(&indicies,1,4,outputFile);
-  fwrite(&vertices,1,4,outputFile);
-  fwrite(&normals,1,4,outputFile);
-  fwrite(&uvs,1,4,outputFile);
-  fwrite(indexBufferAlloc,1,indicies*12, outputFile);
-  fwrite(uvIndexBufferAlloc,1,indicies*12,outputFile);
-  fwrite(vertexBufferAlloc,1,vertices*12,outputFile);
-  fwrite(uvBufferAlloc,1,uvs*8,outputFile);
-
-
+  fwrite(outputdata,1,outputdatasize,outputFile);
+  fclose(outputFile);
+  printf("%s",outputFileName);
 
 	free(fileData);
   fclose(f);

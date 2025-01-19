@@ -5,21 +5,11 @@
 #include "../common/common.h"
 #include "../common/module.h"
 #include "stdlib.h"
-#include "unistd.h"
 
 window mainwindow;
 modelinfo m;
 model mdl;
 void client_init() {
-  module_t* kernel = module_fork("kernel");
-  if (!kernel) {
-    printf("\n");
-    printf("Failed to fork kernel module!\n");
-    printf("Game cannot run without kernel\n");
-    printf("Please verify game installation\n");
-    exit(1);
-  }
-
 
   sys_initwindows();
   draw_init();
@@ -30,6 +20,8 @@ void client_init() {
 
   m = readmodel("character.bmf");
   mdl = draw_genmodel(m);
+
+  common_init();
 
 
   printf("client inited\n");
@@ -45,7 +37,7 @@ void client_frame() {
   draw_model(mdl,matrix);
   sys_render();
 };
-bool client_shouldrun() {
+char client_shouldrun() {
   return sys_windowsexists(mainwindow);
 };
 void client_deinit() {

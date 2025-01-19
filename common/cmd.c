@@ -1,4 +1,5 @@
 #include "cmd.h"
+#include "cvar.h"
 #include "stdlib.h"
 #include "string.h"
 #include "common.h"
@@ -20,9 +21,15 @@ cmdfunction_t* cmd_findcmd(const char* name) {
   return 0;
 };
 
-void cmd_create(const char* name, cmdfunc_t function) {
+void cmd_create(const char* name, cmdfunc_t function, const char* description) {
   cmdfunction_t* func = (cmdfunction_t*)malloc(sizeof(cmdfunction_t));
-  func->name = strclone(name);
+  func->name = strclone("%s",name);
+
+  if (description) {
+    func->description = strclone("%s",description);
+  } else {
+    func->description = 0;
+  }
   func->function = function;
   func->next = cmdfunctions;
   cmdfunctions = func;
@@ -63,6 +70,9 @@ void cmd_execute2(const char* command) {
       last+=count;
       count = 0;
     }
+    if (cmd_argc==16) {
+      break;
+    }
     if (command[i]=='\0') {
       break;
     }
@@ -81,7 +91,7 @@ void cmd_execute2(const char* command) {
   if (func) {
     func->function();
   } else {
-    printf("invalid function\n");
+    printf("invalid function: %s\n",cmd_argv[0]);
   }
 };
 void cmd_execute(const char* command) {
@@ -94,12 +104,13 @@ void cmd_execute(const char* command) {
     if (command[i]=='"') {
       isquote=!isquote;
     }
-    if (command[i]=='\0'||(command[i]==';')&&isquote==false) {
+    if ((command[i]=='\0')||(command[i]==';'||(command[i]=='\n'))&&isquote==false) {
       if (count<2) {
         last++;
         count = 0;
         i++;
         if (command[i]=='\0') break;
+        if (command[i]=='\n') break;
         continue;
       };
       char* arg = (char*)malloc(count-1);
@@ -113,3 +124,34 @@ void cmd_execute(const char* command) {
     i++;
   }
 };
+
+void cmd_printhelp() {
+  if (cmd_argc==1) {
+    printf("prints help info for function\n");
+    printf("usage: help <arg1>\n");
+    return;
+  }
+  if (cmd_argc==2) {
+    cvar_t* cvar = cvar_get(cmd_argv[1],0,CVAR_RETURNVALID,0);
+    if (cvar) {
+      if (!cvar->description) {
+        return;
+      }
+      printf("%s",cvar->description);
+      return;
+    }
+    cmdfunction_t* function = cmd_findcmd(cmd_argv[1]);
+    if (function) {
+      if (!function->description) {
+        return;
+      };
+      printf("%s",function->description);
+    }
+  }
+};
+
+void cmd_init() {
+  cmd_create("help",cmd_printhelp,"prints help info for function\n");
+};
+
+

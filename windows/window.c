@@ -48,7 +48,6 @@ window_t* findwindow2(HWND wind) {
 };
 
 void sys_initwindows() {
-  
 };
 
 LRESULT handlewindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -59,7 +58,7 @@ window_handle_t createwindow() {
   window_handle_t handle = {};
   handle.name=0;
 
- const char* CLASS_NAME  = "brWindow";
+  const char* CLASS_NAME  = "brWindow";
 
   WNDCLASS wc = { };
 
@@ -69,23 +68,22 @@ window_handle_t createwindow() {
   RegisterClassA(&wc);
 
   handle.window = CreateWindowExA(
-    0,                              // Optional window styles.
-    CLASS_NAME,                     // Window class
-    "",    // Window text
-    WS_OVERLAPPEDWINDOW,            // Window style
-
-    // Size and position
+    0,
+    CLASS_NAME,
+    "",
+    WS_OVERLAPPEDWINDOW,
     CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 
-    NULL,       // Parent window    
-    NULL,       // Menu
-    NULL,  // Instance handle
-    NULL        // Additional application data
+    NULL,
+    NULL,
+    NULL,
+    NULL
     );
-  if (handle.window == NULL)
-  {
-      fuck("failed to create window");
+  if (handle.window == NULL) {
+      fuck("failed to create window\n");
   }
+
+
 
   ShowWindow(handle.window, 1);
   UpdateWindow(handle.window);
@@ -173,7 +171,12 @@ void sys_render() {
 };
 
 void sys_prerender() {
-  vkDeviceWaitIdle(device);
+  vkDeviceWaitIdle(device);  
+  MSG msg;
+  if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);;
+		DispatchMessageW(&msg);	
+	}
   if (!swapchains) {
     free(swapchains);
     free(imageindexes);
@@ -207,7 +210,7 @@ window sys_createwindow() {
   window_handle_t* w=(window_handle_t*)handle->handle;
   *w=createwindow();
   *w=createswapchain(*w);
-  SetWindowLongPtr(w->window, GWLP_USERDATA,(long long)w);
+  SetWindowLongPtr(w->window, GWLP_USERDATA,(long long)handle);
 
   handle->next=windows;
   windows=handle;
@@ -220,8 +223,7 @@ void sys_setwindowsize(window wind, int x, int y, int width, int height) {
     return;
   };
   window_handle_t* w=(window_handle_t*)wind->handle;
-  w->width=width;
-  w->height=height;
+  SetWindowPos(w->window, NULL, x,y, width, height, SWP_NOZORDER | SWP_SHOWWINDOW);
   return; 
 };
 
@@ -269,9 +271,51 @@ VkImageView sys_getwindowimageview(window wind) {
 
 LRESULT handlewindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   window_t* window = (window_t*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+  window_handle_t* w;
   switch (uMsg) {
 	case WM_DESTROY:
-	
+    printf("destroying window\n");
+    w=window->handle; 
+    
+    if (!window) {
+      printf("failed to find window\n");
+      return 0;
+    };
+    // since using references handle referencing
+    if (window==windows) {
+      windows = window->next;
+      goto deletesuccess;
+    }
 
+    window_t* wind;
+    for(wind=windows;wind;wind=(window_t*)wind->next) {
+      if ((window_t*)wind->next==window) {
+        wind->next = window->next;
+        break;
+      };
+    };
+    goto deletesuccess;
+
+deletesuccess:
+    windowcount--;
+    *w=destroyswapchain(*w);
+    *w=destroywindow(*w);
+    free(window->handle);
+    window->handle=0;
+	  break;
+  case WM_SIZE:
+    w=window->handle;
+    int width = LOWORD(lParam);
+    int height = HIWORD(lParam);
+    if (w->width!=width || w->height!=height) {
+
+      *w=destroyswapchain(*w);
+      *w=createswapchain(*w);
+      w->width=width;
+      w->height=height;
+
+    } 
+    break;
   }
+  return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

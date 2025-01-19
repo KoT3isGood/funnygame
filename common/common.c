@@ -3,6 +3,9 @@
 #include "stdarg.h"
 #include "stdlib.h"
 #include "math.h"
+#include "string.h"
+#include "module.h"
+
 
 void fuck(const char* why) {
   printf("%s",why);
@@ -29,7 +32,7 @@ char* strclone(const char *format, ...) {
     va_end(args_copy);
     return result;
 }
-void print_hex(const unsigned char *data, size_t length) {
+void print_hex(const unsigned char *data, long length) {
     size_t offset = 0;
 
     while (offset < length) {
@@ -55,30 +58,19 @@ void print_hex(const unsigned char *data, size_t length) {
         offset = line_end;
     }
 }
-modelinfo readmodel(const char* file) {
-  modelinfo model;
- 
-  FILE* f = fopen(file,"rb");
-  if (!f) {
-    printf("failed to find file\n");
+
+void common_init() {
+  cmd_init();
+
+  module_t* kernel = module_fork("kernel");
+  if (!kernel) {
+    printf("\n");
+    printf("Failed to fork kernel module!\n");
+    printf("Game cannot run without kernel\n");
+    printf("Please verify game installation\n");
     exit(1);
   }
-	uint32_t size = 0;
-  fseek(f, 0, SEEK_END); // seek to end of file
-  size = ftell(f); // get current file pointer
-  fseek(f, 0, SEEK_SET); // seek back to beginning of file
-  char* data = (char*)malloc(size);
-  fread(data, sizeof(char), size, f);
+};
+void common_deinit() {
 
-  model.numindicies = *(uint32_t*)(data);
-  model.numverices = *(uint32_t*)(data+4);
-  model.numnormals = *(uint32_t*)(data+8);
-  model.numuvs = *(uint32_t*)(data+12);
-  model.index = data+16;
-  model.indexuvs = ((char*)model.index     +model.numindicies*12);
-  model.vertex = ((char*)model.indexuvs     +model.numindicies*12);
-  model.uvs = ((char*)model.vertex          +model.numverices*12);
-  model.data = data; 
-
-  return model;
 };

@@ -16,6 +16,13 @@
 #include "memory.h"
 #include "window.h"
 #include "../includes/vk_mem_alloc.h"
+#include "../common/cvar.h"
+
+#ifdef _SERVER
+
+
+
+#else
 
 VkInstance instance;
 
@@ -36,8 +43,21 @@ extern VkSemaphore* presentSemaphore;
 
 int imageIndex;
 
+cvar_t* fov;
+cvar_t* barycentrics_mode;
+
 void draw_initmodels();
 void draw_init() { 
+  // console variables
+  fov = cvar_fget("r_fov",90.0,0,0);
+  barycentrics_mode = cvar_fget("r_barycentrics_mode",0,CVAR_READONLY,
+      "0 = automatic selection based on GPU (default)\n"
+      "1 = force barycentrics trough geometry shaders\n"
+      "      might be slower\n"
+      "2 = force barycentrics trough VK_KHR_fragment_shader_barycentrics\n"
+      "      might not work on older GPUs\n"
+      );
+
   {
     // instance
     // 1.3 is required
@@ -62,16 +82,19 @@ void draw_init() {
     createInfo.pApplicationInfo = &appInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     VkResult r = vkCreateInstance(&createInfo,0,&instance);
+    VK_PRINTRES("vkCreateInstance",r);
   }
   {
     // device
     uint32_t count = 0;
-    vkEnumeratePhysicalDevices(instance,&count,0);
+    VkResult r = vkEnumeratePhysicalDevices(instance,&count,0);
+    VK_PRINTRES("vkEnumeratePhysicalDevices",r);
     if (!count) {
       fuck("failed to find any GPUs");
     }
     VkPhysicalDevice* physicalDevices = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice)*count);
-    vkEnumeratePhysicalDevices(instance,&count,physicalDevices);
+    r = vkEnumeratePhysicalDevices(instance,&count,physicalDevices);
+    VK_PRINTRES("vkEnumeratePhysicalDevices(2)",r);
     for (int i = 0;i<count;i++) {
       VkPhysicalDeviceProperties features = {};
       vkGetPhysicalDeviceProperties(physicalDevices[0], &features);
@@ -109,7 +132,8 @@ void draw_init() {
     createInfo.queueCreateInfoCount = 1;
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     createInfo.pNext = &pdfsbf;
-    vkCreateDevice(physicalDevice,&createInfo, 0, &device);
+    r=vkCreateDevice(physicalDevice,&createInfo, 0, &device);
+    VK_PRINTRES("vkCreateDevice",r);
     vkGetDeviceQueue(device,0,0,&draw);
     vkGetDeviceQueue(device,0,0,&present);
   }
@@ -263,8 +287,8 @@ vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage) {
   return buffer;
 };
 void vk_freebuffer(vk_buffer buffer) {
-  vkFreeMemory(device,buffer.memory,0);
   vkDestroyBuffer(device,buffer.buffer,0);
+  vkFreeMemory(device,buffer.memory,0);
 };
 
 
@@ -289,7 +313,8 @@ VkImageView vk_genimageview(const VkImage image, VkFormat format) {
 	imageViewCreateInfo.subresourceRange.levelCount = 1;
 	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 	imageViewCreateInfo.subresourceRange.layerCount = 1;
-	vkCreateImageView(device, &imageViewCreateInfo, 0, &imageView);
+	VkResult r= vkCreateImageView(device, &imageViewCreateInfo, 0, &imageView);
+  VK_PRINTRES("vkCreateImageView",r);
 	return imageView;
 }
 
@@ -482,7 +507,6 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	VkAttachmentReference depthAttachmentRef={};
 	depthAttachmentRef.attachment = info.renderpassnum;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
   VkAttachmentDescription* attachments = malloc(sizeof(VkAttachmentDescription)*(info.renderpassnum+1));
 
 	attachments[info.renderpassnum].format = VK_FORMAT_D32_SFLOAT;
@@ -586,7 +610,8 @@ vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   imageInfo.format=format;	
   imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-  vkCreateImage(device, &imageInfo, 0, &image.image);
+  VkResult r = vkCreateImage(device, &imageInfo, 0, &image.image);
+  VK_PRINTRES("vkCreateImage",r);
 
   VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(device, image.image, &memRequirements);
@@ -596,8 +621,10 @@ vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = findmemorytype(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	vkAllocateMemory(device, &allocInfo, 0, &image.memory);
-	vkBindImageMemory(device, image.image, image.memory, 0);
+	r=vkAllocateMemory(device, &allocInfo, 0, &image.memory);
+  VK_PRINTRES("vkAllocateMemory",r);
+	r=vkBindImageMemory(device, image.image, image.memory, 0);
+  VK_PRINTRES("vkBindImageMemory",r);
 
   image.x=imageInfo.extent.width;
   image.y=imageInfo.extent.width;
@@ -605,8 +632,8 @@ vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
   return image;
 };
 void vk_freeimage(vk_image image) {
-  vkFreeMemory(device,image.memory,0);
   vkDestroyImage(device,image.image,0);
+  vkFreeMemory(device,image.memory,0);
 };
 
 void vk_barrier(vk_image image, VkImageLayout layout) {
@@ -632,3 +659,5 @@ void vk_barrier(vk_image image, VkImageLayout layout) {
 
 	vkCmdPipelineBarrier(cmd[imageIndex], VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, 0, 0, 0, 1, &imageMemoryBarrier);
 };
+
+#endif

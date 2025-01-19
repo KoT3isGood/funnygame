@@ -39,7 +39,7 @@ vk_staticmesh* meshes=0;
 
 
 model draw_genmodel(modelinfo info) {
-  vk_buffer vertices = vk_genbuffer(info.numverices*12, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+  /*vk_buffer vertices = vk_genbuffer(info.numverices*12, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
   vk_buffer indices = vk_genbuffer(info.numindicies*12, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
   void* buffer;
@@ -53,9 +53,9 @@ model draw_genmodel(modelinfo info) {
 
   vk_model* mod = (vk_model*)malloc(sizeof(vk_model));
   mod->vertices = vertices;
-  mod->indicies = indices;
+  mod->indicies = indices;*/
 
-  return (model)mod;
+  return (model)0;
 };
 void draw_copymodel(model m);
 void draw_destroymodel(model m);
