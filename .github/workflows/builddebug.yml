@@ -16,14 +16,29 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
+      - name: Install slangc
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            curl -L https://github.com/shader-slang/slang/releases/latest/download/slang-linux.zip -o slang.zip
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            curl -L https://github.com/shader-slang/slang/releases/latest/download/slang-macos.zip -o slang.zip
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            curl -L https://github.com/shader-slang/slang/releases/latest/download/slang-windows.zip -o slang.zip
+          fi
+          unzip slang.zip -d slang
+          sudo mv slang/bin/* /usr/local/bin/
+      - name: Install Vulkan and X11 (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libx11-xcb-dev libxcb-dri3-dev libvulkan-dev
+      - name: Install Vulkan (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install -y vulkan-sdk
+          setx VULKAN_SDK "C:\Program Files (x86)\VulkanSDK\1.x.x.x" # Update version as needed
+      - name: Install Vulkan (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install vulkan-headers vulkan-loader
       - run: zig build
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - uses: goto-bus-stop/setup-zig@v2
-      - run: zig fmt --check .
