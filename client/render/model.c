@@ -22,9 +22,12 @@ extern window mainwindow;
 extern int imageIndex;
 
 typedef struct vk_model {
-  vk_buffer vertices;
-  vk_buffer indicies;
-  float matrix[16];
+  struct vk_mesh {
+    vk_buffer vertices;
+    vk_buffer indicies;
+    float matrix[16];
+  }* meshes;
+  uint32_t nummeshes;
 } vk_model;
 
 typedef struct vk_staticmesh {
@@ -38,24 +41,37 @@ typedef struct vk_staticmesh {
 vk_staticmesh* meshes=0;
 
 
-model draw_genmodel(modelinfo info) {
-  /*vk_buffer vertices = vk_genbuffer(info.numverices*12, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-  vk_buffer indices = vk_genbuffer(info.numindicies*12, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-  void* buffer;
-  VkResult r = vkMapMemory(device,vertices.memory,0,vertices.size,0,&buffer);
-  memcpy(buffer,info.vertex,vertices.size);
-  vkUnmapMemory(device,vertices.memory);
-
-  vkMapMemory(device,indices.memory,0,indices.size,0,&buffer);
-  memcpy(buffer,info.index,indices.size);
-  vkUnmapMemory(device,indices.memory);
+model draw_genmodel(modelinfo_t* info) {
 
   vk_model* mod = (vk_model*)malloc(sizeof(vk_model));
-  mod->vertices = vertices;
-  mod->indicies = indices;*/
+  mod->nummeshes=info->nummodels;
+  struct vk_mesh* meshes=malloc(sizeof(struct vk_mesh)*mod->nummeshes);
 
-  return (model)0;
+  int i = 0;
+  for (struct model_t* model=info->models;model;model=model->next) {
+    vk_buffer vertices = vk_genbuffer(model->vertexcount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vk_buffer indices = vk_genbuffer(model->indexcount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    printf("%p\n",vertices.buffer);
+    printf("making mesh\n");
+
+    void* buffer;
+    VkResult r = vkMapMemory(device,vertices.memory,0,vertices.size,0,&buffer);
+    memcpy(buffer,model->vertices,vertices.size);
+    vkUnmapMemory(device,vertices.memory);
+
+    vkMapMemory(device,indices.memory,0,indices.size,0,&buffer);
+    memcpy(buffer,model->indexes,indices.size);
+    vkUnmapMemory(device,indices.memory);
+
+
+    meshes[i].vertices=vertices;
+    meshes[i].indicies=indices;
+    i++;
+  }
+  mod->meshes=meshes;
+
+
+  return (model)mod;
 };
 void draw_copymodel(model m);
 void draw_destroymodel(model m);
@@ -68,7 +84,7 @@ void draw_model(model m, float matrix[16]) {
   vk_staticmesh* foundmesh=0;
   for (vk_staticmesh* mesh = meshes;mesh;mesh=mesh->next) {
     if (mesh->model==m) {
-      foundmesh=mesh->model;
+      foundmesh=mesh;
       break;
     }
   };
@@ -196,12 +212,6 @@ void draw_rendermodels() {
 	vkCmdSetScissor(cmd[imageIndex], 0, 1, &scissor);
 
   for (int i = 0;i<numuniquemodels;i++) {
-    VkDeviceSize offsets[1] = {
-      0
-    };
-    vkCmdBindVertexBuffers(cmd[imageIndex],0,1,&meshes[i].model->vertices.buffer,offsets);
-    vkCmdBindIndexBuffer(cmd[imageIndex],meshes[i].model->indicies.buffer,0,VK_INDEX_TYPE_UINT32);
-
     mat4 matrix = GLM_MAT4_IDENTITY;
     glm_translate(matrix,(vec4){0,0,-3,0});
 
@@ -211,7 +221,17 @@ void draw_rendermodels() {
     
 
     vkCmdPushConstants(cmd[imageIndex],pipeline.layout,VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,64,matrix);
-    vkCmdDrawIndexed(cmd[imageIndex],meshes[i].model->indicies.size/4,1,0,0,0);
+
+    VkDeviceSize offsets[1] = {
+      0
+    };
+    for (int x = 0;x<meshes[i].model->nummeshes;x++) {
+      vkCmdBindVertexBuffers(cmd[imageIndex],0,1,&meshes[i].model->meshes[x].vertices.buffer,offsets);
+      vkCmdBindIndexBuffer(cmd[imageIndex],meshes[i].model->meshes[x].indicies.buffer,0,VK_INDEX_TYPE_UINT32);
+
+      vkCmdDrawIndexed(cmd[imageIndex],meshes[i].model->meshes[x].indicies.size/4,1,0,0,0);
+    }
+
   }
 
   vkCmdEndRenderPass(cmd[imageIndex]);

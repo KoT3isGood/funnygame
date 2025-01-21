@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include "vulkan/vk_enum_string_helper.h"
 #include "stdbool.h"
+#include "../common/model.h"
 
 
 // Model handles
@@ -13,7 +14,7 @@ typedef void* animdata;
 
 // Creates model
 // copies data from modelinfo to the GPU
-model draw_genmodel(modelinfo info);
+model draw_genmodel(modelinfo_t* info);
 
 // Creates another model copy
 void draw_copymodel(model m);

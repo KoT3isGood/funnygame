@@ -7,7 +7,7 @@
 #include "stdlib.h"
 
 window mainwindow;
-modelinfo m;
+modelinfo_t* m;
 model mdl;
 void client_init() {
 

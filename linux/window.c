@@ -51,6 +51,7 @@ window_t* findwindow2(Window wind) {
 void sys_initwindows() {
   // open x11 display
   display = XOpenDisplay(0);
+  XSynchronize(display,True);
   if (!display) {
     fuck("failed to open display");
   }

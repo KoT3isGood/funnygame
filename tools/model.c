@@ -1,6 +1,9 @@
 #include "model.h"
 #include "stdio.h"
 #include "stdlib.h"
+
+
+extern char* outputfile;
 void objtobmf(const char* file) {
   FILE* f = fopen(file,"r");
   if (!f) {
@@ -115,17 +118,17 @@ void objtobmf(const char* file) {
 
   brv_parameter parameters[4] = {};
   parameters[0].name="Indices";
-  parameters[0].size=indicies;
+  parameters[0].datasize=indicies*12;
   parameters[0].data=indexBufferAlloc;
   parameters[1].name="UVIndices";
-  parameters[1].size=indicies;
+  parameters[1].datasize=indicies*12;
   parameters[1].data=uvIndexBufferAlloc;
   parameters[2].name="Vertices";
-  parameters[2].size=vertices;
+  parameters[2].datasize=vertices*12;
   parameters[2].data=vertexBufferAlloc;
   parameters[3].name="UVs";
-  parameters[3].size=vertices;
-  parameters[3].data=vertexBufferAlloc;
+  parameters[3].datasize=uvs*8;
+  parameters[3].data=uvBufferAlloc;
   brv_object staticMesh = {};
   staticMesh.name="Mesh";
   staticMesh.numparameters=4;
@@ -138,11 +141,14 @@ void objtobmf(const char* file) {
   unsigned int outputdatasize;
   brv_build(model,&outputdatasize,&outputdata);
 
+  if (outputfile) {
+    outputFileName=outputfile;
+  }
   fclose(fopen(outputFileName, "w"));
   FILE* outputFile = fopen(outputFileName, "ab");
   fwrite(outputdata,1,outputdatasize,outputFile);
   fclose(outputFile);
-  printf("%s",outputFileName);
+  printf("Written to %s\n",outputFileName);
 
 	free(fileData);
   fclose(f);
