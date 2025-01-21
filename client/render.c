@@ -399,7 +399,7 @@ uint32_t findmemorytype(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 
 
 vk_shader vk_genshader(const char* shaderfile, VkShaderStageFlagBits shadertype, const char* entry) {
-  FILE* f = fopen(shaderfile,"r");
+  FILE* f = fopen(shaderfile,"rb");
   if (!f) {
     fuck("shader not found");
   }
