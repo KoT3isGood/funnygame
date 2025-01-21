@@ -46,16 +46,20 @@ int imageIndex;
 cvar_t* fov;
 cvar_t* barycentrics_mode;
 
+
+vk_extensions extensions;
+
 void draw_initmodels();
 void draw_init() { 
   // console variables
   fov = cvar_fget("r_fov",90.0,0,0);
-  barycentrics_mode = cvar_fget("r_barycentrics_mode",0,CVAR_READONLY,
+  barycentrics_mode = cvar_fget("r_barycentrics_mode",1,CVAR_READONLY,
       "0 = automatic selection based on GPU (default)\n"
       "1 = force barycentrics trough geometry shaders\n"
       "      might be slower\n"
       "2 = force barycentrics trough VK_KHR_fragment_shader_barycentrics\n"
       "      might not work on older GPUs\n"
+      "other values will default to 0\n"
       );
 
   {
@@ -85,6 +89,7 @@ void draw_init() {
     VK_PRINTRES("vkCreateInstance",r);
   }
   {
+
     // device
     uint32_t count = 0;
     VkResult r = vkEnumeratePhysicalDevices(instance,&count,0);
@@ -103,6 +108,66 @@ void draw_init() {
     };
     free(physicalDevices);
 
+    uint32_t numavaliableextensions;
+    vkEnumerateDeviceExtensionProperties(physicalDevice, 0,&numavaliableextensions,0);
+    VkExtensionProperties* availableextensions=malloc(sizeof(VkExtensionProperties)*numavaliableextensions);
+    vkEnumerateDeviceExtensionProperties(physicalDevice, 0,&numavaliableextensions,availableextensions);
+
+    uint32_t numextensions=0;
+    char** deviceextensions;
+
+
+    #define REQUIRE(a) \
+      numextensions++;
+
+    #define OPTIONAL(a) \
+    for(int i = 0;i<numavaliableextensions;i++) { \
+      if (!strcmp(#a,availableextensions[i].extensionName)) { \
+        numextensions++; \
+        break; \
+      } \
+    }
+
+    #include "render/extensions.txt"
+
+    #undef REQUIRE
+    #undef OPTIONAL
+
+    deviceextensions = malloc(sizeof(char*)*numextensions);
+
+    int x = 0;
+
+    #define REQUIRE(a) \
+      extensions._##a=1; \
+      deviceextensions[x]=#a; \
+      x++;
+
+    #define OPTIONAL(a) \
+    extensions._##a=0; \
+    for(int i = 0;i<numavaliableextensions;i++) { \
+      if (!strcmp(#a,availableextensions[i].extensionName)) { \
+        extensions._##a=1; \
+        deviceextensions[x]=#a;\
+        x++;\
+      } \
+    } \
+
+
+    #include "render/extensions.txt"
+
+    #undef REQUIRE
+    #undef OPTIONAL
+
+
+
+    for(int i = 0;i<numextensions;i++) {
+      printf("enabling %s\n",deviceextensions[i]);
+    }
+
+
+    free(availableextensions);
+
+
     float priority = 1.0;
     VkDeviceQueueCreateInfo queueCreateInfo={};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -118,24 +183,24 @@ void draw_init() {
     pdfsbf.fragmentShaderBarycentric = VK_TRUE;
     pdfsbf.pNext=&pdv12;
 
-    const char* extensions[] = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
-      VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME,
-    };
-
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.enabledLayerCount = 0;
-    createInfo.enabledExtensionCount = sizeof(extensions)/sizeof(const char*);
-    createInfo.ppEnabledExtensionNames = extensions;
+    createInfo.enabledExtensionCount = numextensions;
+    createInfo.ppEnabledExtensionNames = deviceextensions;
     createInfo.queueCreateInfoCount = 1;
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     createInfo.pNext = &pdfsbf;
+
+    VkPhysicalDeviceFeatures features = {};
+    features.geometryShader=VK_TRUE;
+    createInfo.pEnabledFeatures=&features;
     r=vkCreateDevice(physicalDevice,&createInfo, 0, &device);
     VK_PRINTRES("vkCreateDevice",r);
     vkGetDeviceQueue(device,0,0,&draw);
     vkGetDeviceQueue(device,0,0,&present);
+
+    //free(extensions);
   }
   {
     // command buffers
@@ -405,7 +470,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 
 	VkPushConstantRange pushConstantRange={};
 	pushConstantRange.size = info.pushsize;
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
 	if (info.pushsize) {
 		pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 		pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;

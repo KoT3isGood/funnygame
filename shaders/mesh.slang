@@ -41,7 +41,7 @@ struct instances {
 Buffer<instances> batches;
 
 struct vertexresult {
-  float4 position: SV_Position;
+    float4 position : SV_Position;
 };
 
 [shader("vertex")]
@@ -54,9 +54,11 @@ vertexresult vertex(
 // simply draw triangles with barycetrics and other mesh data
 [shader("fragment")]
 float4 fragment( 
-  float3 barycentic: SV_Barycentrics,
+  float3 barycentric: SV_Barycentrics,
   uint32_t triangleID: SV_PrimitiveID,
   uint32_t instanceID: SV_InstanceID,
 ) {
-  return float4(float3(barycentic),0.5);
+  return float4(float3(barycentric),1);
 }
+
+

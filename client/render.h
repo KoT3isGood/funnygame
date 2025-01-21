@@ -165,3 +165,11 @@ VkImageView vk_genimageview(const VkImage image, VkFormat format);
 if (a<0) {printf("%s : %i (%s)\n", b, a, string_VkResult(a)); fuck("\n");} \
 if (a>0) printf("%s : %i (%s)\n", b, a, string_VkResult(a))
 
+#define REQUIRE(a) char _##a;
+#define OPTIONAL(a) char _##a;
+typedef struct vk_extensions {
+  #include "render/extensions.txt"
+} vk_extensions;
+
+#undef REQUIRE
+#undef OPTIONAL

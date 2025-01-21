@@ -20,6 +20,8 @@ extern VkCommandPool stagingCommandPool;
 
 extern window mainwindow;
 extern int imageIndex;
+extern vk_extensions extensions;
+
 
 typedef struct vk_model {
   struct vk_mesh {
@@ -51,8 +53,6 @@ model draw_genmodel(modelinfo_t* info) {
   for (struct model_t* model=info->models;model;model=model->next) {
     vk_buffer vertices = vk_genbuffer(model->vertexcount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vk_buffer indices = vk_genbuffer(model->indexcount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    printf("%p\n",vertices.buffer);
-    printf("making mesh\n");
 
     void* buffer;
     VkResult r = vkMapMemory(device,vertices.memory,0,vertices.size,0,&buffer);
@@ -116,12 +116,46 @@ void draw_initmodels() {
 
   memset(&instances,0,sizeof(vk_buffer));
   vk_shader shader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_COMPUTE_BIT,"transform");
-  vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
-  vk_shader fragshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
+
+  extern cvar_t* barycentrics_mode;
 
   vk_tripipeline_info info = {};
-  vk_shader shaders[2] = {vertshader,fragshader};
-  info.numshaders=2;
+  vk_shader shaders[3];
+  int barymode = atoi(barycentrics_mode->value);
+  if (barymode==0) {
+    if(extensions._VK_KHR_fragment_shader_barycentric) {
+      vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
+      vk_shader fragshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
+      shaders[0]=vertshader;
+      shaders[1]=fragshader;
+      info.numshaders=2;
+    } else {
+      printf("------------geometry\n");
+      vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
+      vk_shader fragshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment_soft");
+      vk_shader geomshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_GEOMETRY_BIT,"geometry");
+      shaders[0]=vertshader;
+      shaders[1]=geomshader;
+      shaders[2]=fragshader;
+      info.numshaders=3;
+    }
+  }
+  if (barymode==1) { 
+    vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
+    vk_shader fragshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment_soft");
+    vk_shader geomshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_GEOMETRY_BIT,"geometry");
+    shaders[0]=vertshader;
+    shaders[1]=geomshader;
+    shaders[2]=fragshader;
+    info.numshaders=3;
+  }
+  if (barymode==2) { 
+    vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
+    vk_shader fragshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
+    shaders[0]=vertshader;
+    shaders[1]=fragshader;
+    info.numshaders=2;
+  }
   info.shaders = shaders;
 
   info.desciptorsnum=0;
@@ -132,6 +166,7 @@ void draw_initmodels() {
   info.renderpassnum=1;
   info.renderpass = renderpass;
   info.depth=1;
+
   pipeline = vk_gentripipeline(info);
 }
 void draw_rendermodels() { 
@@ -210,10 +245,8 @@ void draw_rendermodels() {
 	scissor.offset = (VkOffset2D){ 0, 0 };
 	scissor.extent = (VkExtent2D){ x,y };
 	vkCmdSetScissor(cmd[imageIndex], 0, 1, &scissor);
-
-  for (int i = 0;i<numuniquemodels;i++) {
     mat4 matrix = GLM_MAT4_IDENTITY;
-    glm_translate(matrix,(vec4){0,0,-3,0});
+    glm_translate(matrix,(vec4){0,0,-30,0});
 
     mat4 perspectiv = GLM_MAT4_IDENTITY;
     glm_perspective(glm_rad(90),(float)x/(float)y,0.01,100.0,perspectiv);
@@ -222,6 +255,8 @@ void draw_rendermodels() {
 
     vkCmdPushConstants(cmd[imageIndex],pipeline.layout,VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,64,matrix);
 
+  for (int i = 0;i<numuniquemodels;i++) {
+   
     VkDeviceSize offsets[1] = {
       0
     };

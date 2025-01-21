@@ -140,6 +140,7 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&toolsartifact.step);
 
     shadercompiler.compile(b, "shaders/mesh.slang");
+    shadercompiler.compile(b, "shaders/mesh_soft.slang");
 
     // run it
     const run_cmd = b.addRunArtifact(exe);

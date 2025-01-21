@@ -1,0 +1,11 @@
+REQUIRE(VK_KHR_swapchain)
+REQUIRE(VK_KHR_push_descriptor)
+
+// barycentics
+// if not supported use geometry shader emulation for them
+OPTIONAL(VK_KHR_fragment_shader_barycentric)
+
+// editor may require ray tracing
+OPTIONAL(VK_KHR_ray_tracing_pipeline)
+OPTIONAL(VK_KHR_acceleration_structure)
+OPTIONAL(VK_KHR_deferred_host_operations)

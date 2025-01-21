@@ -8,6 +8,28 @@
 #include <vulkan/vulkan_core.h>
 #include "vulkan/vulkan_xlib.h"
 
+
+
+
+
+// TODO LIST:
+// add Wayland support
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Display* display;
 int screen;
 int windowcount;
