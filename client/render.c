@@ -53,7 +53,7 @@ void draw_initmodels();
 void draw_init() { 
   // console variables
   fov = cvar_fget("r_fov",90.0,0,0);
-  barycentrics_mode = cvar_fget("r_barycentrics_mode",1,CVAR_READONLY,
+  barycentrics_mode = cvar_fget("r_barycentrics_mode",0,CVAR_READONLY,
       "0 = automatic selection based on GPU (default)\n"
       "1 = force barycentrics trough geometry shaders\n"
       "      might be slower\n"
