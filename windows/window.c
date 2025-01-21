@@ -272,7 +272,8 @@ VkImageView sys_getwindowimageview(window wind) {
 LRESULT handlewindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   window_t* window = (window_t*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
   window_handle_t* w;
-  switch (uMsg) {
+  if (window) {
+ switch (uMsg) {
 	case WM_DESTROY:
     printf("destroying window\n");
     w=window->handle; 
@@ -317,5 +318,7 @@ deletesuccess:
     } 
     break;
   }
-  return DefWindowProc(hwnd, uMsg, wParam, lParam);
+
+  }
+   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
