@@ -1,8 +1,0 @@
-CompileFlags:
-  Add:
-    - "-I./"
-    - "-I./includes/vulkan/include/"
-    - "-I./includes/"
-    - "-I./includes/Vulkan-Utility-Libraries/include/"
-    - "-I./includes/libbrv/include/"
-    - "-I./modules/kernel/"

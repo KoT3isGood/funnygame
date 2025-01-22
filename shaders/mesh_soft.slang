@@ -1,10 +1,12 @@
+#include "mesh_shared.slang"
+
 [shader("fragment")]
-float4 fragment_soft(
+fragmentoutput fragment(
   float3 barycentric: COLOR, 
   uint32_t triangleID: SV_PrimitiveID,
   uint32_t instanceID: SV_InstanceID,
 ) {
-  return float4(float3(barycentric),1);
+  return fragmentoutput(barycentric.xy,triangleID,meshID);
 }
 // software barycentics
 struct geometryinput {

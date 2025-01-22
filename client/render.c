@@ -18,6 +18,8 @@
 #include "../includes/vk_mem_alloc.h"
 #include "../common/cvar.h"
 
+#include "vk_mem_alloc.h"
+
 #ifdef _SERVER
 
 
@@ -30,6 +32,8 @@ VkPhysicalDevice physicalDevice;
 VkDevice device;
 VkQueue draw;
 VkQueue present;
+
+VmaAllocator allocator;
 
 VkCommandPool cmdPool;
 VkCommandBuffer cmd[2];
@@ -203,6 +207,15 @@ void draw_init() {
     //free(extensions);
   }
   {
+    VmaAllocatorCreateInfo createInfo = {};
+    createInfo.instance=instance;
+    createInfo.physicalDevice=physicalDevice;
+    createInfo.device=device;
+    VkResult r = vmaCreateAllocator(&createInfo,&allocator);
+    printf("%i\n",r);
+    VK_PRINTRES("vmaCreateAllocator",r);
+  }
+  {
     // command buffers
     VkCommandPoolCreateInfo cmdPoolCreateInfo={};
     cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -324,36 +337,25 @@ void draw_deinit() {
 
 uint32_t findmemorytype(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage) {
-  VkMemoryRequirements memRequirements;
+vk_buffer vk_genbuffer(uint32_t size, VkBufferUsageFlags usage, VmaMemoryUsage memorytype) {
   vk_buffer buffer;
   buffer.size = size;
+
+  VmaAllocationCreateInfo allocInfo = {};
+  allocInfo.usage = memorytype;
 
   VkBufferCreateInfo createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
   createInfo.size = size;
   createInfo.usage = usage;
   createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  vkCreateBuffer(device,&createInfo,0,&buffer.buffer);
-
-  vkGetBufferMemoryRequirements(device, buffer.buffer, &memRequirements);
-
-	VkMemoryAllocateFlagsInfo allocFlagsInfo={};
-	allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-	allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-	VkMemoryAllocateInfo allocInfo={};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findmemorytype(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	allocInfo.pNext = &allocFlagsInfo;
-	vkAllocateMemory(device, &allocInfo, 0, &buffer.memory);
-	vkBindBufferMemory(device, buffer.buffer, buffer.memory, 0);
+  VkResult r = vmaCreateBuffer(allocator,&createInfo,&allocInfo,&buffer.buffer,&buffer.memory,0);
+  VK_PRINTRES("vmaCreateBuffer",r);
 
   return buffer;
 };
 void vk_freebuffer(vk_buffer buffer) {
-  vkDestroyBuffer(device,buffer.buffer,0);
-  vkFreeMemory(device,buffer.memory,0);
+  vmaDestroyBuffer(allocator,buffer.buffer,buffer.memory);
 };
 
 
@@ -477,6 +479,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	}
 
 	VkResult r=vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, 0, &pipeline.layout);
+  VK_PRINTRES("vkCreatePipelineLayout",r);
 
 	VkDynamicState states[2] = {
 	VK_DYNAMIC_STATE_VIEWPORT,
@@ -619,6 +622,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 	r = vkCreateRenderPass(device, &renderPassInfo, 0, &pipeline.renderpass);
+  VK_PRINTRES("vkCreateRenderPass",r);
 
 	VkGraphicsPipelineCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -650,6 +654,7 @@ vk_tripipeline vk_gentripipeline(vk_tripipeline_info info) {
 	createInfo.subpass = 0;
 
 	r = vkCreateGraphicsPipelines(device, 0, 1, &createInfo, 0, &pipeline.pipeline);
+  VK_PRINTRES("vkCreateGraphicsPipelines",r);
   free(stages);
   return pipeline;
 };
@@ -675,21 +680,11 @@ vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   imageInfo.format=format;	
   imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-  VkResult r = vkCreateImage(device, &imageInfo, 0, &image.image);
+
+  VmaAllocationCreateInfo alloc = {};
+  alloc.usage=VMA_MEMORY_USAGE_GPU_ONLY;
+  VkResult r = vmaCreateImage(allocator, &imageInfo,&alloc, &image.image, &image.memory,0);
   VK_PRINTRES("vkCreateImage",r);
-
-  VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(device, image.image, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo={};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findmemorytype(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	r=vkAllocateMemory(device, &allocInfo, 0, &image.memory);
-  VK_PRINTRES("vkAllocateMemory",r);
-	r=vkBindImageMemory(device, image.image, image.memory, 0);
-  VK_PRINTRES("vkBindImageMemory",r);
 
   image.x=imageInfo.extent.width;
   image.y=imageInfo.extent.width;
@@ -697,8 +692,7 @@ vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format) {
   return image;
 };
 void vk_freeimage(vk_image image) {
-  vkDestroyImage(device,image.image,0);
-  vkFreeMemory(device,image.memory,0);
+  vmaDestroyImage(allocator,image.image,image.memory);
 };
 
 void vk_barrier(vk_image image, VkImageLayout layout) {
@@ -722,7 +716,26 @@ void vk_barrier(vk_image image, VkImageLayout layout) {
 	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
 	imageMemoryBarrier.subresourceRange.layerCount = 1;
 
-	vkCmdPipelineBarrier(cmd[imageIndex], VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, 0, 0, 0, 1, &imageMemoryBarrier);
+	vkCmdPipelineBarrier(cmd[imageIndex], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, 0, 0, 0, 1, &imageMemoryBarrier);
+};
+
+void vk_beginstagingcmd() {
+  VkCommandBufferBeginInfo beginInfo = {
+    .sType=VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+    .flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+  };
+  vkBeginCommandBuffer(stagingCommandBuffer,&beginInfo);
+};
+void vk_flushstagingcmd() {
+  vkEndCommandBuffer(stagingCommandBuffer);
+  VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &stagingCommandBuffer;
+
+	vkQueueSubmit(draw, 1, &submitInfo, 0);
+	vkQueueWaitIdle(draw);
+  vkResetCommandBuffer(stagingCommandBuffer,0);
 };
 
 #endif

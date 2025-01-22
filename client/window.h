@@ -11,7 +11,7 @@ typedef struct window_t {
 typedef window_t* window;
 
 // Initializes window system
-// eg: X11 or Win32
+// eg: X11, Wayland or Win32
 // should be called once
 void sys_initwindows();
 
@@ -45,7 +45,10 @@ void sys_destroywindow(window wind);
 // Returns true if window exists
 bool sys_windowsexists(window wind);
 
+// Returns window width
 int sys_getwindowidth(window wind);
+
+// Returns window height
 int sys_getwindoheight(window wind);
 
 

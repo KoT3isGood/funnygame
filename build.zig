@@ -1,6 +1,7 @@
 const std = @import("std");
 const shadercompiler = @import("shaders/shadercompiler.zig");
 const builtin = @import("builtin");
+const zcc = @import("compile_commands");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -140,7 +141,15 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&toolsartifact.step);
 
     shadercompiler.compile(b, "shaders/mesh.slang");
+    shadercompiler.compile(b, "shaders/mesh_hard.slang");
     shadercompiler.compile(b, "shaders/mesh_soft.slang");
+    //shadercompiler.compile(b, "shaders/texturing.slang");
+
+    // build clangd compile commands
+    var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
+    targets.append(exe) catch @panic("OOM");
+    targets.append(tools) catch @panic("OOM");
+    zcc.createStep(b, "cdb", targets.toOwnedSlice() catch @panic("OOM"));
 
     // run it
     const run_cmd = b.addRunArtifact(exe);

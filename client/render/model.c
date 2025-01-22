@@ -6,12 +6,15 @@
 #include "../window.h"
 #include "../../includes/cglm/include/cglm/cglm.h"
 #include "../../includes/cglm/include/cglm/affine.h"
+#include "vk_mem_alloc.h"
 extern VkInstance instance;
 
 extern VkPhysicalDevice physicalDevice;
 extern VkDevice device;
 extern VkQueue draw;
 extern VkQueue present;
+
+extern VmaAllocator allocator;
 
 extern VkCommandPool cmdPool;
 extern VkCommandBuffer cmd[2];
@@ -51,17 +54,31 @@ model draw_genmodel(modelinfo_t* info) {
 
   int i = 0;
   for (struct model_t* model=info->models;model;model=model->next) {
-    vk_buffer vertices = vk_genbuffer(model->vertexcount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vk_buffer indices = vk_genbuffer(model->indexcount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vk_buffer verticesstaging = vk_genbuffer(model->vertexcount,VK_BUFFER_USAGE_TRANSFER_SRC_BIT ,VMA_MEMORY_USAGE_CPU_TO_GPU);
+    vk_buffer indicesstaging = vk_genbuffer(model->indexcount,VK_BUFFER_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_CPU_TO_GPU);
+    vk_buffer vertices = vk_genbuffer(model->vertexcount, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+    vk_buffer indices = vk_genbuffer(model->indexcount, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
 
     void* buffer;
-    VkResult r = vkMapMemory(device,vertices.memory,0,vertices.size,0,&buffer);
-    memcpy(buffer,model->vertices,vertices.size);
-    vkUnmapMemory(device,vertices.memory);
+    VkResult r = vmaMapMemory(allocator, verticesstaging.memory, &buffer);
+    VK_PRINTRES("vmaMapMemory",r);
+    memcpy(buffer,model->vertices,verticesstaging.size);
+    vmaUnmapMemory(allocator,verticesstaging.memory);
 
-    vkMapMemory(device,indices.memory,0,indices.size,0,&buffer);
-    memcpy(buffer,model->indexes,indices.size);
-    vkUnmapMemory(device,indices.memory);
+    vmaMapMemory(allocator,indicesstaging.memory,&buffer);
+    memcpy(buffer,model->indexes,indicesstaging.size);
+    vmaUnmapMemory(allocator,indicesstaging.memory);
+    
+    vk_beginstagingcmd();
+    VkBufferCopy cpy = {};
+    cpy.size = verticesstaging.size;
+    vkCmdCopyBuffer(stagingCommandBuffer,verticesstaging.buffer,vertices.buffer,1,&cpy);
+    cpy.size = indicesstaging.size;
+    vkCmdCopyBuffer(stagingCommandBuffer,indicesstaging.buffer,indices.buffer,1,&cpy);
+    vk_flushstagingcmd();
+
+    vk_freebuffer(verticesstaging);
+    vk_freebuffer(indicesstaging);
 
 
     meshes[i].vertices=vertices;
@@ -122,17 +139,17 @@ void draw_initmodels() {
   vk_tripipeline_info info = {};
   vk_shader shaders[3];
   int barymode = atoi(barycentrics_mode->value);
-  if (barymode==0) {
+  if (barymode!=1 ||barymode!=2) {
     if(extensions._VK_KHR_fragment_shader_barycentric) {
       vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
-      vk_shader fragshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
+      vk_shader fragshader = vk_genshader("shaders/mesh_hard.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
       shaders[0]=vertshader;
       shaders[1]=fragshader;
       info.numshaders=2;
     } else {
       printf("------------geometry\n");
       vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
-      vk_shader fragshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment_soft");
+      vk_shader fragshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
       vk_shader geomshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_GEOMETRY_BIT,"geometry");
       shaders[0]=vertshader;
       shaders[1]=geomshader;
@@ -142,7 +159,7 @@ void draw_initmodels() {
   }
   if (barymode==1) { 
     vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
-    vk_shader fragshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment_soft");
+    vk_shader fragshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
     vk_shader geomshader = vk_genshader("shaders/mesh_soft.spv",VK_SHADER_STAGE_GEOMETRY_BIT,"geometry");
     shaders[0]=vertshader;
     shaders[1]=geomshader;
@@ -151,7 +168,7 @@ void draw_initmodels() {
   }
   if (barymode==2) { 
     vk_shader vertshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_VERTEX_BIT,"vertex");
-    vk_shader fragshader = vk_genshader("shaders/mesh.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
+    vk_shader fragshader = vk_genshader("shaders/mesh_hard.spv",VK_SHADER_STAGE_FRAGMENT_BIT,"fragment");
     shaders[0]=vertshader;
     shaders[1]=fragshader;
     info.numshaders=2;
@@ -162,7 +179,7 @@ void draw_initmodels() {
   info.polygonmode=VK_POLYGON_MODE_FILL;
   vk_renderpass renderpass[2] = {};
   renderpass[0].format = VK_FORMAT_R8G8B8A8_SRGB;
-  info.pushsize=64;
+  info.pushsize=68;
   info.renderpassnum=1;
   info.renderpass = renderpass;
   info.depth=1;
@@ -286,6 +303,5 @@ void draw_rendermodels() {
   };
   meshes = 0;
   numdrawedmodels=0;
-  numuniquemodels=0;
-};
+  numuniquemodels=0;};
 

@@ -5,6 +5,7 @@
 #include "vulkan/vk_enum_string_helper.h"
 #include "stdbool.h"
 #include "../common/model.h"
+#include "vk_mem_alloc.h"
 
 
 // Model handles
@@ -46,7 +47,7 @@ void draw_deinit();
 typedef struct vk_buffer {
   uint32_t size;
   VkBuffer buffer;
-  VkDeviceMemory memory;
+  VmaAllocation memory;
 } vk_buffer;
 
 // Image handle
@@ -56,7 +57,7 @@ typedef struct vk_image {
   uint32_t y;
   VkFormat format;
   VkImage image;
-  VkDeviceMemory memory;
+  VmaAllocation memory;
 } vk_image;
 
 // Rasterization pipeline handle 
@@ -137,7 +138,7 @@ typedef struct vk_blas {
 
 
 // Creates buffer
-vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage);
+vk_buffer vk_genbuffer(uint32_t size,VkBufferUsageFlags usage, VmaMemoryUsage memorytype);
 // Destroys buffer
 void vk_freebuffer(vk_buffer buffer);
 
@@ -147,6 +148,9 @@ vk_shader vk_genshader(const char* shaderfile, VkShaderStageFlagBits shadertype,
 
 // Creates rasterization pipeline
 vk_tripipeline vk_gentripipeline(vk_tripipeline_info info);
+
+// Creates compute pipeline
+vk_tripipeline vk_gencomppipeline(vk_comppipeline_info info);
 
 // Creates image
 vk_image vk_genimage(unsigned int x, unsigned int y, VkFormat format);
@@ -161,10 +165,16 @@ void vk_barrier(vk_image image, VkImageLayout layout);
 // Generates image view
 VkImageView vk_genimageview(const VkImage image, VkFormat format);
 
+void vk_beginstagingcmd();
+void vk_flushstagingcmd();
+
+// Checks for Vulkan commands
 #define VK_PRINTRES(b,a) \
 if (a<0) {printf("%s : %i (%s)\n", b, a, string_VkResult(a)); fuck("\n");} \
 if (a>0) printf("%s : %i (%s)\n", b, a, string_VkResult(a))
 
+
+// extensions file
 #define REQUIRE(a) char _##a;
 #define OPTIONAL(a) char _##a;
 typedef struct vk_extensions {

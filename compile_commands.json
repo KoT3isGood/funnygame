@@ -1,0 +1,290 @@
+[
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/common/common.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/common.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/common/common.c",
+		"output": "/home/kotofyt/.cache/zig/common.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/common/cvar.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/cvar.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/common/cvar.c",
+		"output": "/home/kotofyt/.cache/zig/cvar.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/common/cmd.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/cmd.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/common/cmd.c",
+		"output": "/home/kotofyt/.cache/zig/cmd.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/common/model.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/model.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/common/model.c",
+		"output": "/home/kotofyt/.cache/zig/model.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/client/client.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/client.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/client/client.c",
+		"output": "/home/kotofyt/.cache/zig/client.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/client/main.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/main.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/client/main.c",
+		"output": "/home/kotofyt/.cache/zig/main.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/client/render.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/render.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/client/render.c",
+		"output": "/home/kotofyt/.cache/zig/render.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/client/vma.cpp",
+			"-o",
+			"/home/kotofyt/.cache/zig/vma.cpp.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/client/vma.cpp",
+		"output": "/home/kotofyt/.cache/zig/vma.cpp.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/client/render/model.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/model.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/client/render/model.c",
+		"output": "/home/kotofyt/.cache/zig/model.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/linux/window.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/window.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/linux/window.c",
+		"output": "/home/kotofyt/.cache/zig/window.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/linux/module.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/module.c.o",
+			"-lX11",
+			"-lvulkan",
+			"-I/mnt/rtt/funnygame",
+			"-I/mnt/rtt/funnygame/includes/vulkan/include",
+			"-I/mnt/rtt/funnygame/includes/Vulkan-Utility-Libraries/include",
+			"-I/mnt/rtt/funnygame/includes",
+			"-I/mnt/rtt/funnygame/modules/kernel"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/linux/module.c",
+		"output": "/home/kotofyt/.cache/zig/module.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/tools/main.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/main.c.o",
+			"-I/mnt/rtt/funnygame/includes/libbrv/include"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/tools/main.c",
+		"output": "/home/kotofyt/.cache/zig/main.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/tools/model.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/model.c.o",
+			"-I/mnt/rtt/funnygame/includes/libbrv/include"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/tools/model.c",
+		"output": "/home/kotofyt/.cache/zig/model.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/includes/libbrv/source/parser.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/parser.c.o"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/includes/libbrv/source/parser.c",
+		"output": "/home/kotofyt/.cache/zig/parser.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/includes/libbrv/source/analyzer.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/analyzer.c.o"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/includes/libbrv/source/analyzer.c",
+		"output": "/home/kotofyt/.cache/zig/analyzer.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/includes/libbrv/source/builder.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/builder.c.o"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/includes/libbrv/source/builder.c",
+		"output": "/home/kotofyt/.cache/zig/builder.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/includes/libbrv/source/parser.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/parser.c.o"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/includes/libbrv/source/parser.c",
+		"output": "/home/kotofyt/.cache/zig/parser.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/includes/libbrv/source/analyzer.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/analyzer.c.o"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/includes/libbrv/source/analyzer.c",
+		"output": "/home/kotofyt/.cache/zig/analyzer.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
+			"/mnt/rtt/funnygame/includes/libbrv/source/builder.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/builder.c.o"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/includes/libbrv/source/builder.c",
+		"output": "/home/kotofyt/.cache/zig/builder.c.o"
+	}
+]
