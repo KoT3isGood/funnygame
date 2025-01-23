@@ -1,7 +1,6 @@
 
 // Basic vulkan extensions
 REQUIRE(VK_KHR_swapchain)
-REQUIRE(VK_KHR_push_descriptor)
 
 // barycentics
 // if not supported use geometry shader emulation for them
