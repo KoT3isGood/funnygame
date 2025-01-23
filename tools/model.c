@@ -5,7 +5,7 @@
 
 extern char* outputfile;
 void objtobmf(const char* file) {
-  FILE* f = fopen(file,"r");
+  FILE* f = fopen(file,"rb");
   if (!f) {
     printf("failed to find file\n");
     exit(1);
@@ -144,7 +144,7 @@ void objtobmf(const char* file) {
   if (outputfile) {
     outputFileName=outputfile;
   }
-  fclose(fopen(outputFileName, "w"));
+  fclose(fopen(outputFileName, "wb"));
   FILE* outputFile = fopen(outputFileName, "ab");
   fwrite(outputdata,1,outputdatasize,outputFile);
   fclose(outputFile);
