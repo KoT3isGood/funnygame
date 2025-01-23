@@ -1,7 +1,8 @@
 const std = @import("std");
 const shadercompiler = @import("shaders/shadercompiler.zig");
+const assetcompiler = @import("assets/assetcompiler.zig");
 const builtin = @import("builtin");
-const zcc = @import("compile_commands");
+//const zcc = @import("compile_commands");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -45,6 +46,7 @@ pub fn build(b: *std.Build) void {
             "common/model.c",
         },
     });
+    // not headless
     if (!server) {
         exe.addCSourceFiles(.{
             .files = &.{
@@ -67,6 +69,7 @@ pub fn build(b: *std.Build) void {
             exe.addCSourceFile(.{ .file = b.path("linux/window.c") });
         }
     }
+    // headless
     if (server) {
         exe.addCSourceFiles(.{
             .files = &.{
@@ -76,6 +79,7 @@ pub fn build(b: *std.Build) void {
             },
         });
     }
+    // every configuration
     if (os == .windows) {
         exe.linkSystemLibrary("ws2_32");
         exe.addCSourceFiles(.{
@@ -140,18 +144,24 @@ pub fn build(b: *std.Build) void {
     toolsartifact.dest_dir = .{ .custom = "../bin" };
     b.getInstallStep().dependOn(&toolsartifact.step);
 
-    shadercompiler.compile(b, "shaders/mesh.slang");
-    shadercompiler.compile(b, "shaders/mesh_hard.slang");
-    shadercompiler.compile(b, "shaders/mesh_soft.slang");
+    // shading
+    const shadercompilation_step = b.step("shaders", "Compile the shaders");
+    shadercompiler.compile(b, shadercompilation_step, "shaders/mesh.slang");
+    shadercompiler.compile(b, shadercompilation_step, "shaders/mesh_hard.slang");
+    shadercompiler.compile(b, shadercompilation_step, "shaders/mesh_soft.slang");
     //shadercompiler.compile(b, "shaders/texturing.slang");
 
-    // build clangd compile commands
-    var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
-    targets.append(exe) catch @panic("OOM");
-    targets.append(tools) catch @panic("OOM");
-    zcc.createStep(b, "cdb", targets.toOwnedSlice() catch @panic("OOM"));
+    // assets
+    const assetscompilation_step = b.step("assets", "Compile the assets");
+    assetcompiler.compile(b, tools, assetscompilation_step, "models/teapot.obj");
 
-    // run it
+    // build clangd compile commands
+    //var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
+    //targets.append(exe) catch @panic("OOM");
+    //targets.append(tools) catch @panic("OOM");
+    //zcc.createStep(b, "cdb", targets.toOwnedSlice() catch @panic("OOM"));
+
+    // run app
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
 
@@ -162,4 +172,6 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+    run_step.dependOn(assetscompilation_step);
+    run_step.dependOn(shadercompilation_step);
 }

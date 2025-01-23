@@ -18,7 +18,7 @@ void client_init() {
   sys_setwindowtitle(mainwindow,"funnygame");
   sys_setwindowsize(mainwindow,1,1,1280,720);
 
-  m = readmodel("character.bmf");
+  m = readmodel("models/teapot.bmf");
   mdl = draw_genmodel(m);
 
   common_init();
