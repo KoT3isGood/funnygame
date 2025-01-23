@@ -171,7 +171,7 @@ pub fn build(b: *std.Build) void {
     run_cmd.setCwd(b.path("./bin/"));
 
     const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
     run_step.dependOn(assetscompilation_step);
     run_step.dependOn(shadercompilation_step);
+    run_step.dependOn(&run_cmd.step);
 }
