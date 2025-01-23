@@ -207,10 +207,15 @@ void draw_init() {
     //free(extensions);
   }
   {
+    VmaVulkanFunctions functions = {};
+    functions.vkGetInstanceProcAddr=vkGetInstanceProcAddr;
+    functions.vkGetDeviceProcAddr=vkGetDeviceProcAddr;
+
     VmaAllocatorCreateInfo createInfo = {};
     createInfo.instance=instance;
     createInfo.physicalDevice=physicalDevice;
     createInfo.device=device;
+    createInfo.pVulkanFunctions=&functions;
     VkResult r = vmaCreateAllocator(&createInfo,&allocator);
     printf("%i\n",r);
     VK_PRINTRES("vmaCreateAllocator",r);
