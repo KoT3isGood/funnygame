@@ -48,6 +48,7 @@ typedef struct vk_buffer {
   uint32_t size;
   VkBuffer buffer;
   VmaAllocation memory;
+  VkDeviceAddress address;
 } vk_buffer;
 
 // Image handle

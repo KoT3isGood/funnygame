@@ -357,6 +357,11 @@ vk_buffer vk_genbuffer(uint32_t size, VkBufferUsageFlags usage, VmaMemoryUsage m
   VkResult r = vmaCreateBuffer(allocator,&createInfo,&allocInfo,&buffer.buffer,&buffer.memory,0);
   VK_PRINTRES("vmaCreateBuffer",r);
 
+  VkBufferDeviceAddressInfo info = {};
+  info.sType=VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;  
+  info.buffer=buffer.buffer;
+  buffer.address=vkGetBufferDeviceAddress(device,&info);
+
   return buffer;
 };
 void vk_freebuffer(vk_buffer buffer) {

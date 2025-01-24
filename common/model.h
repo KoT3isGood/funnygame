@@ -16,3 +16,4 @@ typedef struct modelinfo_t {
 
 } modelinfo_t;
 modelinfo_t* readmodel(const char* file);
+

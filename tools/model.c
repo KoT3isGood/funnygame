@@ -116,7 +116,7 @@ void objtobmf(const char* file) {
   const char* ending = ".bmf";
   memcpy(outputFileName+outputFileNameLen-4,ending, 5);
 
-  brv_parameter parameters[4] = {};
+  lbrv_parameter_t parameters[4] = {};
   parameters[0].name="Indices";
   parameters[0].datasize=indicies*12;
   parameters[0].data=indexBufferAlloc;
@@ -129,17 +129,17 @@ void objtobmf(const char* file) {
   parameters[3].name="UVs";
   parameters[3].datasize=uvs*8;
   parameters[3].data=uvBufferAlloc;
-  brv_object staticMesh = {};
+  lbrv_object_t staticMesh = {};
   staticMesh.name="Mesh";
   staticMesh.numparameters=4;
   staticMesh.parameters=parameters;
 
-  brv_vehicle model = {};
+  lbrv_group_t model = {};
   model.version=7;
-  model.bricks=&staticMesh;
+  model.objects=&staticMesh;
   unsigned char* outputdata;
-  unsigned int outputdatasize;
-  brv_build(model,&outputdatasize,&outputdata);
+  uint64_t outputdatasize;
+  lbrv_build(model,&outputdatasize,&outputdata);
 
   if (outputfile) {
     outputFileName=outputfile;

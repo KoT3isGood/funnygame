@@ -25,7 +25,6 @@ extern window mainwindow;
 extern int imageIndex;
 extern vk_extensions extensions;
 
-
 typedef struct vk_model {
   struct vk_mesh {
     vk_buffer vertices;
@@ -186,6 +185,14 @@ void draw_initmodels() {
 
   pipeline = vk_gentripipeline(info);
 }
+int prevx=0;
+int prevy=0;
+
+vk_buffer matricesbuffer_staging;
+vk_buffer matricesbuffer;
+vk_buffer shadowsmaps;
+
+
 void draw_rendermodels() { 
 
   if (instances.buffer!=0) {
@@ -196,46 +203,47 @@ void draw_rendermodels() {
   if (!numuniquemodels) {
     return;
   }
-  if (!numdrawedmodels) {
-    return;
-  }
-  
+ 
   int x = sys_getwindowidth(mainwindow);
   int y = sys_getwindoheight(mainwindow);
-	if (fb) {
-		vkDestroyFramebuffer(device, fb, 0);
-    vkDestroyImageView(device,depthp,0);
-    vk_freeimage(depth);
-	}
-  depth=vk_genimage(x,y,VK_FORMAT_D32_SFLOAT);
-  depthp=vk_genimageview(depth.image,VK_FORMAT_D32_SFLOAT);
+  
+  if (prevx!=x||prevy!=y) {
+    // resize
+    if (fb) {
+      vkDestroyFramebuffer(device, fb, 0);
+      vkDestroyImageView(device,depthp,0);
+      vk_freeimage(depth);
+    }
+    depth=vk_genimage(x,y,VK_FORMAT_D32_SFLOAT);
+    depthp=vk_genimageview(depth.image,VK_FORMAT_D32_SFLOAT);
 
-	VkFramebufferCreateInfo framebufferInfo={};
-	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferInfo.renderPass = pipeline.renderpass;
-	framebufferInfo.attachmentCount = 2;
-  VkImageView attachments[2] = {
-    sys_getwindowimageview(mainwindow),
-    depthp,
-  };
-	framebufferInfo.pAttachments = attachments;
-	framebufferInfo.width = x;
-	framebufferInfo.height = y;
-	framebufferInfo.layers = 1;	
+    vk_barrier(depth,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+    VkClearDepthStencilValue depthval = {};
+    depthval.depth=1;
+    VkImageSubresourceRange subresourceRange ={};
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = 1;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = 1;
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    vkCmdClearDepthStencilImage(cmd[imageIndex],depth.image,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,&depthval,1,&subresourceRange);
+    VkFramebufferCreateInfo framebufferInfo={};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = pipeline.renderpass;
+    framebufferInfo.attachmentCount = 2;
+    VkImageView attachments[2] = {
+      sys_getwindowimageview(mainwindow),
+      depthp,
+    };
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = x;
+    framebufferInfo.height = y;
+    framebufferInfo.layers = 1;	
 
-	vkCreateFramebuffer(device, &framebufferInfo, 0, &fb);
-
-
-  vk_barrier(depth,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-  VkClearDepthStencilValue depthval = {};
-  depthval.depth=1;
-  VkImageSubresourceRange subresourceRange ={};
-	subresourceRange.baseMipLevel = 0;
-	subresourceRange.levelCount = 1;
-	subresourceRange.baseArrayLayer = 0;
-	subresourceRange.layerCount = 1;
-  subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-  vkCmdClearDepthStencilImage(cmd[imageIndex],depth.image,VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,&depthval,1,&subresourceRange);
+    vkCreateFramebuffer(device, &framebufferInfo, 0, &fb);
+    prevx=x;
+    prevy=y;
+  }
 
 	VkRenderPassBeginInfo renderPassInfo={};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -262,30 +270,9 @@ void draw_rendermodels() {
 	scissor.offset = (VkOffset2D){ 0, 0 };
 	scissor.extent = (VkExtent2D){ x,y };
 	vkCmdSetScissor(cmd[imageIndex], 0, 1, &scissor);
-    mat4 matrix = GLM_MAT4_IDENTITY;
-    glm_translate(matrix,(vec4){0,0,-30,0});
 
-    mat4 perspectiv = GLM_MAT4_IDENTITY;
-    glm_perspective(glm_rad(90),(float)x/(float)y,0.01,100.0,perspectiv);
-    glm_mul(perspectiv,matrix,matrix);
-    
-
-    vkCmdPushConstants(cmd[imageIndex],pipeline.layout,VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,64,matrix);
-
-  for (int i = 0;i<numuniquemodels;i++) {
-   
-    VkDeviceSize offsets[1] = {
-      0
-    };
-    for (int x = 0;x<meshes[i].model->nummeshes;x++) {
-      vkCmdBindVertexBuffers(cmd[imageIndex],0,1,&meshes[i].model->meshes[x].vertices.buffer,offsets);
-      vkCmdBindIndexBuffer(cmd[imageIndex],meshes[i].model->meshes[x].indicies.buffer,0,VK_INDEX_TYPE_UINT32);
-
-      vkCmdDrawIndexed(cmd[imageIndex],meshes[i].model->meshes[x].indicies.size/4,1,0,0,0);
-    }
-
-  }
-
+  // draw here
+  
   vkCmdEndRenderPass(cmd[imageIndex]);
   
 

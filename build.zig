@@ -2,7 +2,7 @@ const std = @import("std");
 const shadercompiler = @import("shaders/shadercompiler.zig");
 const assetcompiler = @import("assets/assetcompiler.zig");
 const builtin = @import("builtin");
-//const zcc = @import("compile_commands");
+const zcc = @import("compile_commands");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -44,6 +44,7 @@ pub fn build(b: *std.Build) void {
             "common/cvar.c",
             "common/cmd.c",
             "common/model.c",
+            "common/enlargedbrv/brv.c",
         },
     });
     // not headless
@@ -136,7 +137,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     tools.linkLibC();
-    tools.addCSourceFiles(.{ .files = &.{ "tools/main.c", "tools/model.c" } });
+    tools.addCSourceFiles(.{ .files = &.{ "tools/main.c", "tools/model.c", "common/enlargedbrv/brv.c" } });
     tools.linkLibrary(libbrv);
     tools.addIncludePath(b.path("includes/libbrv/include/"));
 
@@ -156,10 +157,10 @@ pub fn build(b: *std.Build) void {
     assetcompiler.compile(b, tools, assetscompilation_step, "models/teapot.obj");
 
     // build clangd compile commands
-    //var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
-    //targets.append(exe) catch @panic("OOM");
-    //targets.append(tools) catch @panic("OOM");
-    //zcc.createStep(b, "cdb", targets.toOwnedSlice() catch @panic("OOM"));
+    var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
+    targets.append(exe) catch @panic("OOM");
+    targets.append(tools) catch @panic("OOM");
+    zcc.createStep(b, "cdb", targets.toOwnedSlice() catch @panic("OOM"));
 
     // run app
     const run_cmd = b.addRunArtifact(exe);

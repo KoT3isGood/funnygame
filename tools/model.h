@@ -2,8 +2,7 @@
 #include "string.h"
 #include "malloc.h"
 #include "stdint.h"
-#define BRV_NO_DESERIALIZATION
-#include "../includes/libbrv/include/brv.h"
+#include "../common/enlargedbrv/brv.h"
 
 
 

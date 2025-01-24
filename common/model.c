@@ -5,10 +5,19 @@
 #include "math.h"
 #include "string.h"
 #include "model.h"
+#include "enlargedbrv/brv.h"
 
+typedef struct bmf_property_t {
+  uint32_t datasize;
+  uint8_t* data;
+  uint64_t* sizes;
+  uint64_t* offsets;
+} bmf_property_t;
 
-#define BRV_NO_DESERIALIZATION
-#include "../includes/libbrv/include/brv.h"
+typedef struct bmf_object_t {
+  uint16_t class;
+  uint16_t numproperties;
+} bmf_object_t;
 
 modelinfo_t* readmodel(const char* file) {
   modelinfo_t* model = malloc(sizeof(modelinfo_t));
@@ -24,19 +33,20 @@ modelinfo_t* readmodel(const char* file) {
   fseek(f, 0, SEEK_END); // seek to end of file
   size = ftell(f); // get current file pointer
   fseek(f, 0, SEEK_SET); // seek back to beginning of file
-  unsigned char* data = (char*)malloc(size);
-  fread(data, sizeof(char), size, f);
+  uint8_t* data = (uint8_t*)malloc(size);
+  fread(data, sizeof(uint8_t), size, f);
+  fclose(f);
 
-
-  brv_vehicle modeldata = brv_read(data);
-  for (brv_object* mesh = modeldata.bricks;mesh;mesh=mesh->next) {
+  lbrv_group_t modeldata = lbrv_read(data);
+  for (lbrv_object_t* mesh = modeldata.objects;mesh;mesh=mesh->next) {
     printf("%s\n",mesh->name);
     if (!strcmp(mesh->name,"Mesh")) {
       struct model_t* meshdata = malloc(sizeof(struct model_t));
 
+      printf("%s\n",mesh->name);
       for (int i = 0; i<mesh->numparameters; i++) {
-        brv_parameter parameter = mesh->parameters[i];
-        printf("  %s %i\n",parameter.name,parameter.datasize);
+        lbrv_parameter_t parameter = mesh->parameters[i];
+        printf(" c %s %llu\n",parameter.name,parameter.datasize);
         if (!strcmp(parameter.name,"Indices")) {
           meshdata->indexcount=parameter.datasize;
           meshdata->indexes=parameter.data;
@@ -60,8 +70,12 @@ modelinfo_t* readmodel(const char* file) {
       model->models=meshdata;
     }
   }
-
+ 
   return model;
+};
+
+void writemodel(unsigned char** data, uint32_t* datasize) {
+  modelinfo_t* modelinfo;
 };
 
 
