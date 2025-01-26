@@ -95,7 +95,8 @@ window_handle_t createswapchain(window_handle_t handle) {
     VkWin32SurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
     createInfo.hwnd = handle.window;
-    vkCreateWin32SurfaceKHR(instance,&createInfo,0,&handle.surface);  }
+    VkResult r = vkCreateWin32SurfaceKHR(instance,&createInfo,0,&handle.surface);  }
+    VK_PRINTRES("vkCreateWin32SurfaceKHR",r);
 
   {
     VkSurfaceCapabilitiesKHR capabilies={};
@@ -121,9 +122,7 @@ window_handle_t createswapchain(window_handle_t handle) {
     createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; 
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     VkResult r = vkCreateSwapchainKHR(device, &createInfo, 0, &handle.swapchain);
-    if (r) {
-      fuck("failed to create swapchain\n");
-    }  
+    VK_PRINTRES("vkCreateSwapchainKHR",r);
 
     uint32_t imageCount = 0;
     vkGetSwapchainImagesKHR(device, handle.swapchain, &imageCount, 0);
@@ -136,8 +135,10 @@ window_handle_t createswapchain(window_handle_t handle) {
     VkSemaphoreCreateInfo semaphoreCreateInfo={};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     for (int i = 0;i<2;i++) {
-    vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.graphicsSemaphore[i]);
-    vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.presentSemaphore[i]);
+    r = vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.graphicsSemaphore[i]);
+    Vk_PRINTRES("vkCreateSemaphore(1)",r);
+    r = vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.presentSemaphore[i]);
+    Vk_PRINTRES("vkCreateSemaphore(2)",r);
     }
   }
   return handle;
