@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include "float.h"
 #include "math.h"
+#include "string.h"
 
 lbrv_group_t lbrv_read(unsigned char* contents) {
 
