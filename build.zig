@@ -2,7 +2,7 @@ const std = @import("std");
 const shadercompiler = @import("shaders/shadercompiler.zig");
 const assetcompiler = @import("assets/assetcompiler.zig");
 const builtin = @import("builtin");
-const zcc = @import("compile_commands");
+const zcc = @import("includes/compile_commands.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});

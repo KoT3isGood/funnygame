@@ -242,6 +242,18 @@
 	{
 		"arguments": [
 			"clang",
+			"/mnt/rtt/funnygame/common/enlargedbrv/brv.c",
+			"-o",
+			"/home/kotofyt/.cache/zig/brv.c.o",
+			"-I/mnt/rtt/funnygame/includes/libbrv/include"
+		],
+		"directory": "/mnt/rtt/funnygame",
+		"file": "/mnt/rtt/funnygame/common/enlargedbrv/brv.c",
+		"output": "/home/kotofyt/.cache/zig/brv.c.o"
+	},
+	{
+		"arguments": [
+			"clang",
 			"/mnt/rtt/funnygame/includes/libbrv/source/parser.c",
 			"-o",
 			"/home/kotofyt/.cache/zig/parser.c.o"
