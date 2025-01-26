@@ -136,9 +136,9 @@ window_handle_t createswapchain(window_handle_t handle) {
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     for (int i = 0;i<2;i++) {
     r = vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.graphicsSemaphore[i]);
-    Vk_PRINTRES("vkCreateSemaphore(1)",r);
+    VK_PRINTRES("vkCreateSemaphore(1)",r);
     r = vkCreateSemaphore(device, &semaphoreCreateInfo, 0, &handle.presentSemaphore[i]);
-    Vk_PRINTRES("vkCreateSemaphore(2)",r);
+    VK_PRINTRES("vkCreateSemaphore(2)",r);
     }
   }
   return handle;
