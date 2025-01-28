@@ -93,7 +93,7 @@ window_handle_t createwindow() {
 window_handle_t createswapchain(window_handle_t handle) {
   {
     VkWin32SurfaceCreateInfoKHR createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.hwnd = handle.window;
     VkResult r = vkCreateWin32SurfaceKHR(instance,&createInfo,0,&handle.surface);  
     VK_PRINTRES("vkCreateWin32SurfaceKHR",r);
